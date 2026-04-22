@@ -351,7 +351,7 @@ image-editor-pro/
 
 - **`mcp-server/`** — integration tests: spawn the server process, send tool calls via stdio, verify output files exist with correct format and approximate size. Happy path + error cases (`FileNotFound`, `OutputExists`, `TooLarge`).
 
-- **`extension/`** — sparse automated tests (VSCode extension auto-testing is bolestivé — not worth heavy investment). Cover only critical flows (custom editor registration, file opening). Primary verification is **manual** via Extension Development Host.
+- **`extension/`** — sparse automated tests (VSCode extension auto-testing is painful and brittle — not worth heavy investment). Cover only critical flows (custom editor registration, file opening). Primary verification is **manual** via Extension Development Host.
 
 - **Golden file tests** — for conversions, reference output files (e.g., `sample-256.webp.q80`) committed to `test/fixtures/golden/`. Pixel-diff against current output to catch regressions if sharp's internal encoder ever changes.
 
