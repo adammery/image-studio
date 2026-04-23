@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as path from 'node:path';
 import { ImageEditorProvider } from './imageEditorProvider.js';
 import { ImageTreeProvider } from './imageTreeProvider.js';
 
@@ -41,6 +42,30 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration('imageStudio.excludeFolders')) treeProvider.refresh();
+    }),
+  );
+
+  // Delete command: trash the image in the active Image Studio tab
+  context.subscriptions.push(
+    vscode.commands.registerCommand('imageStudio.deleteImage', async () => {
+      const activeTab = vscode.window.tabGroups.activeTabGroup.activeTab;
+      if (!activeTab || !(activeTab.input instanceof vscode.TabInputCustom)) {
+        return;
+      }
+      const uri = activeTab.input.uri;
+      const choice = await vscode.window.showWarningMessage(
+        `Move "${path.basename(uri.fsPath)}" to Trash?`,
+        { modal: true, detail: 'The file will be sent to the system Trash — you can restore it from there.' },
+        'Move to Trash',
+      );
+      if (choice !== 'Move to Trash') return;
+      try {
+        const { default: trash } = await import('trash');
+        await trash(uri.fsPath);
+        await vscode.window.tabGroups.close(activeTab);
+      } catch (err) {
+        vscode.window.showErrorMessage(`Image Studio: could not delete: ${(err as Error).message}`);
+      }
     }),
   );
 }

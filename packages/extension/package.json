@@ -61,11 +61,24 @@
         "contents": "No images in this workspace.\n[Open Folder](command:vscode.openFolder)\nSupported formats: PNG, JPG, WebP, AVIF"
       }
     ],
+    "commands": [
+      {
+        "command": "imageStudio.deleteImage",
+        "title": "Move Image to Trash",
+        "category": "Image Studio"
+      }
+    ],
     "keybindings": [
       {
         "command": "workbench.view.extension.imageStudio",
         "key": "ctrl+shift+\\",
         "mac": "cmd+shift+\\"
+      },
+      {
+        "command": "imageStudio.deleteImage",
+        "key": "ctrl+delete",
+        "mac": "cmd+backspace",
+        "when": "activeCustomEditorId == 'imageStudio.editor'"
       }
     ],
     "configuration": {
