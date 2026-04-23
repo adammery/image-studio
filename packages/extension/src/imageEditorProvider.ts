@@ -3,6 +3,9 @@ import { getImageInfo, defaultEditState } from '@image-studio/core';
 import type { EditState } from '@image-studio/core';
 import { getWebviewContent, postToWebview } from './webviewContent.js';
 import type { WvMessage } from './bridge.js';
+import { PreviewEncoder } from './previewEncoder.js';
+import { SaveOrchestrator } from './saveOrchestrator.js';
+import * as path from 'node:path';
 
 export interface ImageDocument extends vscode.CustomDocument {
   readonly fsPath: string;
@@ -13,6 +16,8 @@ export class ImageEditorProvider implements vscode.CustomEditorProvider<ImageDoc
 
   private readonly editStates = new Map<string, EditState>();
   private readonly _panelsForDocument = new Map<string, Set<vscode.WebviewPanel>>();
+  private readonly encoders = new Map<string, PreviewEncoder>();
+  private readonly saveOrch = new SaveOrchestrator();
 
   private readonly _onDidChangeCustomDocument = new vscode.EventEmitter<
     vscode.CustomDocumentContentChangeEvent<ImageDocument>
@@ -47,13 +52,45 @@ export class ImageEditorProvider implements vscode.CustomEditorProvider<ImageDoc
     const key = document.uri.toString();
     if (!this._panelsForDocument.has(key)) this._panelsForDocument.set(key, new Set());
     this._panelsForDocument.get(key)!.add(webviewPanel);
+
+    const encoder = new PreviewEncoder(this.context, (result) => {
+      if (result.ok) {
+        const previewUri = webviewPanel.webview.asWebviewUri(
+          vscode.Uri.file(result.previewUri),
+        ).toString();
+        postToWebview(webviewPanel, { type: 'previewReady', previewUri, size: result.size, width: result.width, height: result.height });
+      } else {
+        postToWebview(webviewPanel, { type: 'previewError', message: result.message });
+        vscode.window.showErrorMessage(`Image Studio preview: ${result.message}`);
+      }
+    });
+    this.encoders.set(key, encoder);
+
     webviewPanel.onDidDispose(() => {
       this._panelsForDocument.get(key)?.delete(webviewPanel);
       this.editStates.delete(key);
+      encoder.dispose();
+      this.encoders.delete(key);
     });
 
     this._setupMessageHandler(document, webviewPanel);
+    this._setupFileWatcher(document, webviewPanel);
     await this._sendInit(document, webviewPanel);
+  }
+
+  private _setupFileWatcher(document: ImageDocument, panel: vscode.WebviewPanel): void {
+    const watcher = vscode.workspace.createFileSystemWatcher(document.fsPath);
+    watcher.onDidChange(async () => {
+      const state = this.editStates.get(document.uri.toString());
+      const dirty = state ? (
+        state.crop !== undefined || state.resize !== undefined ||
+        state.format !== 'same'  || state.quality !== 80 || state.lossless !== false
+      ) : false;
+      if (!dirty) await this._sendInit(document, panel);
+      // If dirty: VSCode's native "File was modified externally" toast fires automatically
+    });
+    panel.onDidDispose(() => watcher.dispose());
+    this.context.subscriptions.push(watcher);
   }
 
   async saveCustomDocument(
@@ -96,6 +133,7 @@ export class ImageEditorProvider implements vscode.CustomEditorProvider<ImageDoc
         case 'editStateChanged':
           this.editStates.set(document.uri.toString(), msg.state);
           this._updateDirty(document, msg.state);
+          this.encoders.get(document.uri.toString())?.schedule(document.fsPath, msg.state);
           break;
         case 'save':
           await this._performSave(
@@ -125,11 +163,52 @@ export class ImageEditorProvider implements vscode.CustomEditorProvider<ImageDoc
 
   private async _performSave(
     document: ImageDocument,
-    _dst: vscode.Uri,
-    _state: EditState,
+    dst: vscode.Uri,
+    state: EditState,
   ): Promise<void> {
-    // Full implementation in Task 13
-    void document;
-    vscode.window.showInformationMessage('Save: implemented in Task 13');
+    const srcPath = document.fsPath;
+    const srcExt  = path.extname(srcPath).slice(1).toLowerCase();
+    const dstExt  = state.format === 'same' ? srcExt : (state.format === 'jpeg' ? 'jpg' : state.format);
+    let dstPath   = dst.fsPath;
+
+    // Correct extension if needed
+    if (path.extname(dstPath).slice(1).toLowerCase() !== dstExt && dstPath !== srcPath) {
+      dstPath = dstPath.replace(/\.[^.]+$/, '') + '.' + dstExt;
+    }
+
+    const formatChanged = state.format !== 'same' && dstExt !== srcExt;
+    if (formatChanged && dstPath !== srcPath) {
+      const pick = await vscode.window.showInformationMessage(
+        `You changed the format from ${srcExt.toUpperCase()} to ${dstExt.toUpperCase()}.\n` +
+        `Saving will create ${path.basename(dstPath)}. ` +
+        `The original .${srcExt} will remain unless "Move original to Trash" is checked.`,
+        { modal: true },
+        `Save as .${dstExt}`,
+        'Save As… instead',
+      );
+      if (!pick) return;
+      if (pick === 'Save As… instead') {
+        await vscode.commands.executeCommand('workbench.action.files.saveAs');
+        return;
+      }
+    }
+
+    try {
+      const result = await this.saveOrch.save(srcPath, dstPath, state, { overwrite: dstPath === srcPath });
+
+      const freshState = defaultEditState();
+      this.editStates.set(document.uri.toString(), freshState);
+
+      const panels = this._panelsForDocument.get(document.uri.toString());
+      panels?.forEach((p) =>
+        postToWebview(p, { type: 'saveComplete', trashed: result.originalTrashed, newUri: dstPath !== srcPath ? dstPath : undefined }),
+      );
+
+      if (dstPath !== srcPath) {
+        await vscode.commands.executeCommand('vscode.openWith', vscode.Uri.file(dstPath), ImageEditorProvider.viewType);
+      }
+    } catch (err) {
+      vscode.window.showErrorMessage(`Image Studio save failed: ${(err as Error).message}`);
+    }
   }
 }

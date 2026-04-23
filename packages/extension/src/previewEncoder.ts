@@ -1,0 +1,63 @@
+import * as vscode from 'vscode';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import sharp from 'sharp';
+import type { EditState } from '@image-studio/core';
+
+const DEBOUNCE_MS = 300;
+
+export type PreviewResult =
+  | { ok: true; previewUri: string; size: number; width: number; height: number }
+  | { ok: false; message: string };
+
+export class PreviewEncoder {
+  private timer: ReturnType<typeof setTimeout> | null = null;
+  private disposed = false;
+  private readonly tempDir: string;
+
+  constructor(
+    private readonly context: Pick<vscode.ExtensionContext, 'globalStorageUri'>,
+    private readonly onResult: (result: PreviewResult) => void,
+  ) {
+    this.tempDir = path.join(context.globalStorageUri.fsPath, 'preview');
+    fs.mkdirSync(this.tempDir, { recursive: true });
+  }
+
+  schedule(srcPath: string, state: EditState): void {
+    if (this.disposed) return;
+    if (this.timer) clearTimeout(this.timer);
+    this.timer = setTimeout(() => void this._encode(srcPath, state), DEBOUNCE_MS);
+  }
+
+  dispose(): void {
+    this.disposed = true;
+    if (this.timer) { clearTimeout(this.timer); this.timer = null; }
+    try { fs.rmSync(this.tempDir, { recursive: true, force: true }); } catch { /* ignore */ }
+  }
+
+  private async _encode(srcPath: string, state: EditState): Promise<void> {
+    if (this.disposed) return;
+    try {
+      let pipeline = sharp(srcPath);
+      if (state.crop) pipeline = pipeline.extract({ left: state.crop.x, top: state.crop.y, width: state.crop.width, height: state.crop.height });
+      if (state.resize) pipeline = pipeline.resize(state.resize.width, state.resize.height, { fit: 'fill' });
+      if (state.format !== 'same') {
+        switch (state.format) {
+          case 'png':  pipeline = pipeline.png(); break;
+          case 'jpeg': pipeline = pipeline.jpeg({ quality: state.quality }); break;
+          case 'webp': pipeline = state.lossless ? pipeline.webp({ lossless: true }) : pipeline.webp({ quality: state.quality }); break;
+          case 'avif': pipeline = state.lossless ? pipeline.avif({ lossless: true }) : pipeline.avif({ quality: state.quality }); break;
+        }
+      }
+      const buffer = await pipeline.toBuffer();
+      if (this.disposed) return;
+      const ext = state.format === 'same' ? path.extname(srcPath) : `.${state.format === 'jpeg' ? 'jpg' : state.format}`;
+      const tmpFile = path.join(this.tempDir, `preview${ext}`);
+      fs.writeFileSync(tmpFile, buffer);
+      const meta = await sharp(tmpFile).metadata();
+      this.onResult({ ok: true, previewUri: tmpFile, size: buffer.length, width: meta.width!, height: meta.height! });
+    } catch (err) {
+      if (!this.disposed) this.onResult({ ok: false, message: (err as Error).message });
+    }
+  }
+}
