@@ -26,20 +26,21 @@ npm run build      # compiles dist/ for all packages
 
 ## Using the MCP server with Claude Code (local development)
 
-After `npm run build`, add this block to your Claude Code `settings.json` (or `~/.claude/mcp_config.json` depending on your Claude Code version):
+After `npm run build`, register the server with Claude Code's CLI:
 
-```json
-{
-  "mcpServers": {
-    "image-studio": {
-      "command": "node",
-      "args": ["/absolute/path/to/image-studio/packages/mcp-server/dist/index.js"]
-    }
-  }
-}
+```bash
+claude mcp add --transport stdio --scope user image-studio \
+  -- node /absolute/path/to/image-studio/packages/mcp-server/dist/index.js
 ```
 
-Restart Claude Code. The following tools become available:
+This writes to `~/.claude.json` (Claude Code's MCP config — distinct from `~/.claude/settings.json`). Verify with:
+
+```bash
+claude mcp list                  # should show image-studio with ✓ Connected
+claude mcp get image-studio      # details
+```
+
+Restart your active Claude Code session so it picks up the new server. The following tools then become available:
 
 - `get_image_info(src)` — read metadata without modifying the file
 - `convert_image({src, format, quality?, lossless?, dst?, overwrite?})` — single-file format conversion
