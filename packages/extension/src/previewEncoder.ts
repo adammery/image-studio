@@ -1,6 +1,3 @@
-import * as vscode from 'vscode';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
 import sharp from 'sharp';
 import type { EditState } from '@image-studio/core';
 
@@ -10,18 +7,20 @@ export type PreviewResult =
   | { ok: true; previewDataUrl: string; size: number; width: number; height: number }
   | { ok: false; message: string };
 
+/**
+ * Debounced sharp-based preview encoder. On each `schedule()` call it resets
+ * the timer; when the timer fires it encodes the source with the current
+ * edit state and passes a base64 data URL to `onResult`. Consumers use the
+ * data URL directly as an `<img src>` — this avoids CSP and
+ * `localResourceRoots` friction that happens with temp files.
+ */
 export class PreviewEncoder {
   private timer: ReturnType<typeof setTimeout> | null = null;
   private disposed = false;
-  private readonly tempDir: string;
 
   constructor(
-    private readonly context: Pick<vscode.ExtensionContext, 'globalStorageUri'>,
     private readonly onResult: (result: PreviewResult) => void,
-  ) {
-    this.tempDir = path.join(context.globalStorageUri.fsPath, 'preview');
-    fs.mkdirSync(this.tempDir, { recursive: true });
-  }
+  ) {}
 
   schedule(srcPath: string, state: EditState): void {
     if (this.disposed) return;
@@ -32,7 +31,6 @@ export class PreviewEncoder {
   dispose(): void {
     this.disposed = true;
     if (this.timer) { clearTimeout(this.timer); this.timer = null; }
-    try { fs.rmSync(this.tempDir, { recursive: true, force: true }); } catch { /* ignore */ }
   }
 
   private async _encode(srcPath: string, state: EditState): Promise<void> {
@@ -40,8 +38,10 @@ export class PreviewEncoder {
     try {
       let pipeline = sharp(srcPath);
       if (state.crop) pipeline = pipeline.extract({
-        left: Math.round(state.crop.x), top: Math.round(state.crop.y),
-        width: Math.round(state.crop.width), height: Math.round(state.crop.height),
+        left:   Math.round(state.crop.x),
+        top:    Math.round(state.crop.y),
+        width:  Math.round(state.crop.width),
+        height: Math.round(state.crop.height),
       });
       if (state.resize) pipeline = pipeline.resize(Math.round(state.resize.width), Math.round(state.resize.height), { fit: 'fill' });
       if (state.format !== 'same') {

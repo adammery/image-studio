@@ -11,6 +11,18 @@ export interface ImageDocument extends vscode.CustomDocument {
   readonly fsPath: string;
 }
 
+/** Returns true if the edit state would produce a file different from the source. */
+function isStateDirty(state: EditState): boolean {
+  return (
+    state.crop !== undefined ||
+    state.resize !== undefined ||
+    state.format !== 'same' ||
+    state.lossless !== false
+  );
+  // Note: quality alone is intentionally not dirty — it only affects output when
+  // format changes (which is covered above) or lossless toggles.
+}
+
 export class ImageEditorProvider implements vscode.CustomEditorProvider<ImageDocument> {
   public static readonly viewType = 'imageStudio.editor';
 
@@ -43,8 +55,7 @@ export class ImageEditorProvider implements vscode.CustomEditorProvider<ImageDoc
       enableScripts: true,
       localResourceRoots: [
         vscode.Uri.joinPath(this.context.extensionUri, 'media'),
-        vscode.Uri.file(document.fsPath).with({ path: document.uri.path.replace(/[^/]+$/, '') }),
-        this.context.globalStorageUri,
+        vscode.Uri.file(path.dirname(document.fsPath)),
       ],
     };
     webviewPanel.webview.html = getWebviewContent(webviewPanel.webview, this.context.extensionUri);
@@ -53,7 +64,7 @@ export class ImageEditorProvider implements vscode.CustomEditorProvider<ImageDoc
     if (!this._panelsForDocument.has(key)) this._panelsForDocument.set(key, new Set());
     this._panelsForDocument.get(key)!.add(webviewPanel);
 
-    const encoder = new PreviewEncoder(this.context, (result) => {
+    const encoder = new PreviewEncoder((result) => {
       if (result.ok) {
         postToWebview(webviewPanel, { type: 'previewReady', previewDataUrl: result.previewDataUrl, size: result.size, width: result.width, height: result.height });
       } else {
@@ -79,11 +90,7 @@ export class ImageEditorProvider implements vscode.CustomEditorProvider<ImageDoc
     const watcher = vscode.workspace.createFileSystemWatcher(document.fsPath);
     watcher.onDidChange(async () => {
       const state = this.editStates.get(document.uri.toString());
-      const dirty = state ? (
-        state.crop !== undefined || state.resize !== undefined ||
-        state.format !== 'same'  || state.quality !== 80 || state.lossless !== false
-      ) : false;
-      if (!dirty) await this._sendInit(document, panel);
+      if (!state || !isStateDirty(state)) await this._sendInit(document, panel);
       // If dirty: VSCode's native "File was modified externally" toast fires automatically
     });
     panel.onDidDispose(() => watcher.dispose());
@@ -155,13 +162,7 @@ export class ImageEditorProvider implements vscode.CustomEditorProvider<ImageDoc
   }
 
   private _updateDirty(document: ImageDocument, state: EditState): void {
-    const isDirty =
-      state.crop !== undefined ||
-      state.resize !== undefined ||
-      state.format !== 'same' ||
-      state.quality !== 80 ||
-      state.lossless !== false;
-    if (isDirty) {
+    if (isStateDirty(state)) {
       this._onDidChangeCustomDocument.fire({ document });
     }
   }
