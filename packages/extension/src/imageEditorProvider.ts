@@ -1,10 +1,9 @@
 import * as vscode from 'vscode';
-import { getImageInfo, defaultEditState } from '@image-studio/core';
+import { getImageInfo, defaultEditState, applyEdits } from '@image-studio/core';
 import type { EditState } from '@image-studio/core';
 import { getWebviewContent, postToWebview } from './webviewContent.js';
 import type { WvMessage } from './bridge.js';
 import { PreviewEncoder } from './previewEncoder.js';
-import { SaveOrchestrator } from './saveOrchestrator.js';
 import * as path from 'node:path';
 
 export interface ImageDocument extends vscode.CustomDocument {
@@ -29,7 +28,6 @@ export class ImageEditorProvider implements vscode.CustomEditorProvider<ImageDoc
   private readonly editStates = new Map<string, EditState>();
   private readonly _panelsForDocument = new Map<string, Set<vscode.WebviewPanel>>();
   private readonly encoders = new Map<string, PreviewEncoder>();
-  private readonly saveOrch = new SaveOrchestrator();
 
   private readonly _onDidChangeCustomDocument = new vscode.EventEmitter<
     vscode.CustomDocumentContentChangeEvent<ImageDocument>
@@ -128,7 +126,7 @@ export class ImageEditorProvider implements vscode.CustomEditorProvider<ImageDoc
       const editState = defaultEditState();
       const config = vscode.workspace.getConfiguration('imageStudio');
       const configCompareMode = config.get<string>('defaultCompareMode', 'off');
-      const configQuality     = config.get<number>('defaultQuality', 85);
+      const configQuality     = config.get<number>('defaultQuality', 92);
       // User's last choice in this session wins; fall back to config default.
       editState.compareMode = (this.context.globalState.get<string>('compareMode', configCompareMode)) as EditState['compareMode'];
       editState.quality     = configQuality;
@@ -200,7 +198,7 @@ export class ImageEditorProvider implements vscode.CustomEditorProvider<ImageDoc
     }
 
     try {
-      const result = await this.saveOrch.save(srcPath, dstPath, state, { overwrite: dstPath === srcPath });
+      const result = await applyEdits(srcPath, dstPath, state, { overwrite: dstPath === srcPath });
 
       const freshState = defaultEditState();
       this.editStates.set(document.uri.toString(), freshState);

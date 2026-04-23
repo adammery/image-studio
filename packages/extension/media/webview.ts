@@ -107,8 +107,8 @@ document.getElementById('root')!.innerHTML = /* html */ `
           </div>
           <div class="row" id="quality-row">
             <label>Quality</label>
-            <input type="range" id="quality-slider" min="0" max="100" value="85">
-            <span class="qnum" id="quality-num">85</span>
+            <input type="range" id="quality-slider" min="0" max="100" value="92">
+            <span class="qnum" id="quality-num">92</span>
           </div>
           <label class="check-row" id="lossless-row" style="display:none">
             <input type="checkbox" id="lossless-check"> Lossless
@@ -167,7 +167,7 @@ interface ImageInfo {
 const QUALITY_PRESETS = [92, 85, 75] as const;
 
 let editState: EditState = {
-  format: 'same', quality: 85, lossless: false,
+  format: 'same', quality: 92, lossless: false,
   compareMode: 'off', trashOriginal: false,
 };
 let editMode = false;
@@ -730,10 +730,10 @@ window.addEventListener('message', (event) => {
     }
     case 'saveComplete': {
       showToast(`✓ Saved${(msg as { trashed: boolean }).trashed ? ' (old file replaced)' : ''}`);
-      editState = { format: 'same', quality: 85, lossless: false, compareMode: editState.compareMode, trashOriginal: false };
-      formatSelect.value = 'same'; qualitySlider.value = '85'; qualityNum.textContent = '85';
+      editState = { format: 'same', quality: 92, lossless: false, compareMode: editState.compareMode, trashOriginal: false };
+      formatSelect.value = 'same'; qualitySlider.value = '92'; qualityNum.textContent = '92';
       losslessCheck.checked = false; trashCheck.checked = false;
-      syncCompressUI(); syncTrashUI(); syncPresetButtons(85);
+      syncCompressUI(); syncTrashUI(); syncPresetButtons(92);
       break;
     }
   }

@@ -1,14 +1,22 @@
 {
-  "name": "@image-studio/extension",
+  "name": "image-studio",
+  "displayName": "Image Studio",
+  "publisher": "adammery",
   "version": "0.1.0",
   "private": true,
-  "description": "VSCode extension for Image Studio",
+  "description": "Image editor (crop, resize, compress) for VSCode with Before/After preview.",
+  "license": "MIT",
+  "repository": { "type": "git", "url": "https://github.com/adammery/image-studio" },
+  "categories": ["Visualization", "Other"],
+  "keywords": ["image", "png", "webp", "avif", "jpeg", "crop", "resize", "compress"],
   "main": "./dist/extension.js",
   "scripts": {
     "build": "node esbuild.config.mjs",
     "dev": "node esbuild.config.mjs --watch",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "vscode:prepublish": "node esbuild.config.mjs",
+    "package": "vsce package --no-dependencies -o image-studio.vsix"
   },
   "engines": {
     "vscode": "^1.90.0"
@@ -78,7 +86,7 @@
           "type": "number",
           "enum": [75, 85, 92],
           "enumDescriptions": ["Low — max size savings", "Medium — balanced", "High — near lossless"],
-          "default": 85,
+          "default": 92,
           "description": "Default quality for lossy formats."
         },
         "imageStudio.excludeFolders": {
@@ -98,6 +106,7 @@
   "devDependencies": {
     "@types/node": "^20.12.12",
     "@types/vscode": "^1.90.0",
+    "@vscode/vsce": "^2.27.0",
     "esbuild": "^0.21.0",
     "typescript": "^5.4.5",
     "vitest": "^1.6.0"
