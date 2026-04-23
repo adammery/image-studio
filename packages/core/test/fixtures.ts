@@ -16,25 +16,13 @@ export interface TestFixtures {
 export async function makeFixtures(): Promise<TestFixtures> {
   const dir = mkdtempSync(join(tmpdir(), 'image-studio-test-'));
 
-  const redPng = await sharp({
-    create: { width: 64, height: 64, channels: 3, background: { r: 255, g: 0, b: 0 } }
-  }).png().toBuffer();
-
-  const redJpg = await sharp({
-    create: { width: 64, height: 64, channels: 3, background: { r: 255, g: 0, b: 0 } }
-  }).jpeg({ quality: 80 }).toBuffer();
-
-  const redWebp = await sharp({
-    create: { width: 64, height: 64, channels: 3, background: { r: 255, g: 0, b: 0 } }
-  }).webp().toBuffer();
-
-  const largeRedPng = await sharp({
-    create: { width: 256, height: 256, channels: 3, background: { r: 255, g: 0, b: 0 } }
-  }).png().toBuffer();
-
-  const transparentPng = await sharp({
-    create: { width: 64, height: 64, channels: 4, background: { r: 255, g: 0, b: 0, alpha: 0.5 } }
-  }).png().toBuffer();
+  const [redPng, redJpg, redWebp, largeRedPng, transparentPng] = await Promise.all([
+    sharp({ create: { width: 64, height: 64, channels: 3, background: { r: 255, g: 0, b: 0 } } }).png().toBuffer(),
+    sharp({ create: { width: 64, height: 64, channels: 3, background: { r: 255, g: 0, b: 0 } } }).jpeg({ quality: 80 }).toBuffer(),
+    sharp({ create: { width: 64, height: 64, channels: 3, background: { r: 255, g: 0, b: 0 } } }).webp().toBuffer(),
+    sharp({ create: { width: 256, height: 256, channels: 3, background: { r: 255, g: 0, b: 0 } } }).png().toBuffer(),
+    sharp({ create: { width: 64, height: 64, channels: 4, background: { r: 255, g: 0, b: 0, alpha: 0.5 } } }).png().toBuffer(),
+  ]);
 
   const samplePng = join(dir, 'sample.png');
   const sampleJpg = join(dir, 'sample.jpg');

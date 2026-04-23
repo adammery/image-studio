@@ -14,10 +14,12 @@ describe('test fixtures generator', () => {
       expect(statSync(f).size).toBeGreaterThan(0);
     }
   });
+});
 
-  it('cleanup removes the temp directory', () => {
-    const fxLocal = fx;
-    fxLocal.cleanup();
-    expect(existsSync(fxLocal.dir)).toBe(false);
+describe('fixture cleanup', () => {
+  it('cleanup removes the temp directory', async () => {
+    const tmp = await makeFixtures();
+    tmp.cleanup();
+    expect(existsSync(tmp.dir)).toBe(false);
   });
 });
