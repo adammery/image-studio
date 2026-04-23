@@ -27,6 +27,31 @@
         ],
         "priority": "default"
       }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "imageStudio",
+          "title": "Image Studio",
+          "icon": "media/activity-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "imageStudio": [
+        {
+          "id": "imageStudio.files",
+          "name": "Images",
+          "icon": "media/activity-icon.svg",
+          "contextualTitle": "Image Studio"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "imageStudio.files",
+        "contents": "No images in this workspace.\n[Open Folder](command:vscode.openFolder)\nSupported formats: PNG, JPG, WebP, AVIF"
+      }
     ]
   },
   "dependencies": {
