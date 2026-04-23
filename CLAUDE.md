@@ -4,12 +4,10 @@ Referenčná karta pre prácu na tomto repe. Pri práci na čomkoľvek v `image-
 
 ## Aktuálny stav (2026-04-23)
 
-- **Plan 1 HOTOVÝ** — core library (`@image-studio/core`) + MCP server (`image-studio-mcp`) s 5 tools. Branch `feat/plan-1-core-mcp` s 17 commitmi pushnutý, PR otvorený na GitHube (ak nie, adresa na otvorenie: `https://github.com/adammery/image-studio/pull/new/feat/plan-1-core-mcp`). **57/57 testov zelených.**
-- **MCP server je live** — user ho zaregistroval cez `claude mcp add --scope user image-studio`, Claude Code ho vidí ako ✓ Connected. AI-konverzia funguje end-to-end (user overil: info, convert PNG→WebP, resize).
-- **Plan 2 ešte nezačal** — VSCode extension GUI (CustomEditorProvider, webview, toolbar, crop handles, quality slider, save semantics). Spec-ne to Sekcia 5 (UI & UX) design spec-u. Plan 2 dokument ešte nie je napísaný — pri štarte Plan 2 práce najprv spustiť `superpowers:writing-plans`.
-- **Build stav (lokálne na machine user-a):** `node_modules/` nainštalované, `packages/core/dist/` + `packages/mcp-server/dist/` skompilované. Pre clean checkout: `nvm use && npm install && npm run build`.
-
-Detailný zoznam commit-ov: `git -C ~/Projects/image-studio log --oneline main..feat/plan-1-core-mcp`.
+- **Plan 1 HOTOVÝ a mergnutý do `main`** — `feat/plan-1-core-mcp` FF-mergnutá, 57/57 testov zelených. MCP server live, user overil end-to-end.
+- **Plan 2 spec napísaný** — `docs/superpowers/specs/2026-04-23-plan-2-extension-gui-design.md` (448 riadkov). Definuje novú layout: image vľavo, right panel (Crop/Resize/Compress), Compare pill (Slider/Side-by-side), zoom/pan, Save & Trash, Before/After info panel.
+- **Plan 2 implementation plan ešte nie je napísaný** — ďalší krok je `superpowers:writing-plans` s inputom z hore uvedeného spec-u.
+- **Build stav:** `node_modules/` nainštalované, `packages/core/dist/` + `packages/mcp-server/dist/` skompilované. `packages/extension/` zatiaľ neexistuje. Pre clean checkout: `nvm use && npm install && npm run build`.
 
 ## Čo to je
 
@@ -105,9 +103,9 @@ image-studio/
 
 Výstup: funkčný `image-studio-mcp` npm package, Claude Code cez MCP volá všetkých 5 tools.
 
-**Plan 2 — VSCode Extension GUI** (bude napísaný po dokončení Plan 1)
+**Plan 2 — VSCode Extension GUI** — spec hotový (`docs/superpowers/specs/2026-04-23-plan-2-extension-gui-design.md`), implementation plan sa píše.
 
-CustomEditorProvider + webview + toolbar + crop drag handles + quality slider + save semantics.
+Right panel (Crop/Resize/Compress) + Compare pill (Slider/Side-by-side) + zoom/pan + Save & Trash + Before/After info panel.
 
 ### NIE je v MVP (odložené):
 
@@ -198,7 +196,7 @@ claude mcp add --transport stdio --scope user image-studio \
 
 - **Design spec (authoritative):** `docs/superpowers/specs/2026-04-22-image-editor-design.md`
 - **Plan 1 (core + MCP) — HOTOVÝ:** `docs/superpowers/plans/2026-04-23-plan-1-core-and-mcp-server.md`
-- **Plan 2 (VSCode extension) — TBD:** písať cez `superpowers:writing-plans` keď user povie "ideme na Plan 2". Čerpá zo spec Sekcie 5.
+- **Plan 2 (VSCode extension) — spec hotový:** `docs/superpowers/specs/2026-04-23-plan-2-extension-gui-design.md`. Implementation plan sa píše cez `superpowers:writing-plans`.
 - **Backup pôvodného fork-plánu:** `CLAUDE-backup.md` (iba archív, neaplikuje sa)
 - **README:** `README.md` (user-facing, install + `claude mcp add` setup)
 - **GitHub:** `https://github.com/adammery/image-studio` (branch `feat/plan-1-core-mcp` awaiting merge do `main`)
