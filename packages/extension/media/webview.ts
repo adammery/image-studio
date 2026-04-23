@@ -94,10 +94,16 @@ document.getElementById('root')!.innerHTML = /* html */ `
               <option value="avif">AVIF</option>
             </select>
           </div>
+          <div id="quality-presets" class="quality-presets">
+            <button class="preset-btn" data-q="92">High</button>
+            <button class="preset-btn" data-q="85">Med</button>
+            <button class="preset-btn" data-q="75">Low</button>
+            <span class="preset-custom" id="preset-custom-label"></span>
+          </div>
           <div class="row" id="quality-row">
             <label>Quality</label>
-            <input type="range" id="quality-slider" min="0" max="100" value="80">
-            <span class="qnum" id="quality-num">80</span>
+            <input type="range" id="quality-slider" min="0" max="100" value="85">
+            <span class="qnum" id="quality-num">85</span>
           </div>
           <label class="check-row" id="lossless-row" style="display:none">
             <input type="checkbox" id="lossless-check"> Lossless
@@ -153,8 +159,10 @@ interface ImageInfo {
 }
 
 // ── State ────────────────────────────────────────────────────────────────────
+const QUALITY_PRESETS = [92, 85, 75] as const;
+
 let editState: EditState = {
-  format: 'same', quality: 80, lossless: false,
+  format: 'same', quality: 85, lossless: false,
   compareMode: 'slider', trashOriginal: false,
 };
 let srcMeta: ImageInfo | null = null;
@@ -478,6 +486,27 @@ document.addEventListener('mousemove', (e) => {
 });
 document.addEventListener('mouseup', () => { cropDragging = null; });
 
+// ── Quality presets ───────────────────────────────────────────────────────────
+const presetCustomLabel = document.getElementById('preset-custom-label') as HTMLElement;
+
+function syncPresetButtons(q: number): void {
+  document.querySelectorAll<HTMLButtonElement>('.preset-btn').forEach((btn) => {
+    btn.classList.toggle('active', Number(btn.dataset['q']) === q);
+  });
+  presetCustomLabel.textContent = QUALITY_PRESETS.includes(q as any) ? '' : 'Custom';
+}
+
+document.querySelectorAll<HTMLButtonElement>('.preset-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const q = Number(btn.dataset['q']);
+    editState.quality = q;
+    qualitySlider.value = String(q);
+    qualityNum.textContent = String(q);
+    syncPresetButtons(q);
+    setAfterEstimating(); emitEditState();
+  });
+});
+
 // ── Compress ──────────────────────────────────────────────────────────────────
 formatSelect.addEventListener('change', () => {
   editState.format = formatSelect.value as EditState['format'];
@@ -486,6 +515,7 @@ formatSelect.addEventListener('change', () => {
 qualitySlider.addEventListener('input', () => {
   editState.quality = Number(qualitySlider.value);
   qualityNum.textContent = qualitySlider.value;
+  syncPresetButtons(editState.quality);
   setAfterEstimating(); emitEditState();
 });
 losslessCheck.addEventListener('change', () => {
@@ -574,6 +604,7 @@ window.addEventListener('message', (event) => {
       qualityNum.textContent = String(editState.quality);
       losslessCheck.checked  = editState.lossless;
       syncCompressUI(); syncTrashUI(); syncResizeDefaults();
+      syncPresetButtons(editState.quality);
       break;
     }
     case 'previewReady': {
@@ -599,10 +630,10 @@ window.addEventListener('message', (event) => {
       break;
     }
     case 'saveComplete': {
-      editState = { format: 'same', quality: 80, lossless: false, compareMode: 'slider', trashOriginal: false };
-      formatSelect.value = 'same'; qualitySlider.value = '80'; qualityNum.textContent = '80';
+      editState = { format: 'same', quality: 85, lossless: false, compareMode: editState.compareMode, trashOriginal: false };
+      formatSelect.value = 'same'; qualitySlider.value = '85'; qualityNum.textContent = '85';
       losslessCheck.checked = false; trashCheck.checked = false;
-      syncCompressUI(); syncTrashUI();
+      syncCompressUI(); syncTrashUI(); syncPresetButtons(85);
       break;
     }
     case 'fileChanged': {

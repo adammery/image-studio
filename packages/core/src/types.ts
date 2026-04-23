@@ -103,7 +103,7 @@ export interface ApplyEditsResult {
 export function defaultEditState(): EditState {
   return {
     format: 'same',
-    quality: 80,
+    quality: 85,
     lossless: false,
     compareMode: 'slider',
     trashOriginal: false,

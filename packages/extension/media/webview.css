@@ -165,6 +165,16 @@ body { height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
 .inp.flex1 { flex: 1; }
 .inp.error { border-color: var(--red); }
 .inp-error-text { color: var(--red); font-size: 10px; }
+
+/* ── Quality presets ──────────────────────────────────────────── */
+.quality-presets { display: flex; gap: 6px; align-items: center; }
+.preset-btn {
+  background: #3c3c3c; border: 1px solid #555; color: var(--text-dim);
+  padding: 3px 10px; border-radius: 3px; cursor: pointer;
+  font-size: 10px; font-family: inherit;
+}
+.preset-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.preset-custom { font-size: 10px; color: var(--text-dim); margin-left: 2px; }
 input[type=range] { accent-color: var(--accent); flex: 1; }
 .qnum { opacity: .8; min-width: 22px; text-align: right; font-variant-numeric: tabular-nums; }
 
