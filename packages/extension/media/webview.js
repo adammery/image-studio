@@ -114,9 +114,9 @@ document.getElementById("root").innerHTML = /* html */
         <button class="btn primary" id="btn-save" style="flex:1">Save</button>
         <button class="btn"         id="btn-save-as" style="flex:1">Save As\u2026</button>
       </div>
-      <label id="trash-row" class="check-row disabled" title="No original to remove \u2014 same file is being overwritten">
+      <label id="trash-row" class="check-row disabled" title="Nothing to replace \u2014 same file is being overwritten">
         <input type="checkbox" id="trash-check" disabled>
-        Move original to Trash after save
+        Replace old image
       </label>
     </div>
   </div>
@@ -239,7 +239,7 @@ function syncTrashUI() {
     trashCheck.disabled = true;
     trashCheck.checked = false;
     editState.trashOriginal = false;
-    trashRow.title = "No original to remove \u2014 same file is being overwritten";
+    trashRow.title = "Nothing to replace \u2014 same file is being overwritten";
   }
 }
 function populateBefore(meta, fname) {
@@ -437,7 +437,12 @@ function exitCropMode() {
 }
 cropStart.addEventListener("click", enterCropMode);
 cropApply.addEventListener("click", () => {
-  editState.crop = { x: cropDraft.x, y: cropDraft.y, width: cropDraft.w, height: cropDraft.h };
+  editState.crop = {
+    x: Math.round(cropDraft.x),
+    y: Math.round(cropDraft.y),
+    width: Math.round(cropDraft.w),
+    height: Math.round(cropDraft.h)
+  };
   exitCropMode();
   emitEditState();
 });

@@ -467,7 +467,12 @@ function exitCropMode(): void {
 
 cropStart.addEventListener('click', enterCropMode);
 cropApply.addEventListener('click', () => {
-  editState.crop = { x: cropDraft.x, y: cropDraft.y, width: cropDraft.w, height: cropDraft.h };
+  editState.crop = {
+    x: Math.round(cropDraft.x),
+    y: Math.round(cropDraft.y),
+    width: Math.round(cropDraft.w),
+    height: Math.round(cropDraft.h),
+  };
   exitCropMode(); emitEditState();
 });
 cropCancel.addEventListener('click', exitCropMode);

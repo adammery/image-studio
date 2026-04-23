@@ -39,8 +39,11 @@ export class PreviewEncoder {
     if (this.disposed) return;
     try {
       let pipeline = sharp(srcPath);
-      if (state.crop) pipeline = pipeline.extract({ left: state.crop.x, top: state.crop.y, width: state.crop.width, height: state.crop.height });
-      if (state.resize) pipeline = pipeline.resize(state.resize.width, state.resize.height, { fit: 'fill' });
+      if (state.crop) pipeline = pipeline.extract({
+        left: Math.round(state.crop.x), top: Math.round(state.crop.y),
+        width: Math.round(state.crop.width), height: Math.round(state.crop.height),
+      });
+      if (state.resize) pipeline = pipeline.resize(Math.round(state.resize.width), Math.round(state.resize.height), { fit: 'fill' });
       if (state.format !== 'same') {
         switch (state.format) {
           case 'png':  pipeline = pipeline.png(); break;

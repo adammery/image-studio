@@ -19,12 +19,16 @@ export async function applyEdits(
   let pipeline = sharp(src);
 
   if (state.crop) {
-    const { x, y, width, height } = state.crop;
-    pipeline = pipeline.extract({ left: x, top: y, width, height });
+    pipeline = pipeline.extract({
+      left:   Math.round(state.crop.x),
+      top:    Math.round(state.crop.y),
+      width:  Math.round(state.crop.width),
+      height: Math.round(state.crop.height),
+    });
   }
 
   if (state.resize) {
-    pipeline = pipeline.resize(state.resize.width, state.resize.height, { fit: 'fill' });
+    pipeline = pipeline.resize(Math.round(state.resize.width), Math.round(state.resize.height), { fit: 'fill' });
   }
 
   if (state.format !== 'same') {
