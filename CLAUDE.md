@@ -2,6 +2,15 @@
 
 Referenčná karta pre prácu na tomto repe. Pri práci na čomkoľvek v `image-studio/` toto precizuje ako projekt funguje, kam sa zapisuje, a čo robiť NEMÁME.
 
+## Aktuálny stav (2026-04-23)
+
+- **Plan 1 HOTOVÝ** — core library (`@image-studio/core`) + MCP server (`image-studio-mcp`) s 5 tools. Branch `feat/plan-1-core-mcp` s 17 commitmi pushnutý, PR otvorený na GitHube (ak nie, adresa na otvorenie: `https://github.com/adammery/image-studio/pull/new/feat/plan-1-core-mcp`). **57/57 testov zelených.**
+- **MCP server je live** — user ho zaregistroval cez `claude mcp add --scope user image-studio`, Claude Code ho vidí ako ✓ Connected. AI-konverzia funguje end-to-end (user overil: info, convert PNG→WebP, resize).
+- **Plan 2 ešte nezačal** — VSCode extension GUI (CustomEditorProvider, webview, toolbar, crop handles, quality slider, save semantics). Spec-ne to Sekcia 5 (UI & UX) design spec-u. Plan 2 dokument ešte nie je napísaný — pri štarte Plan 2 práce najprv spustiť `superpowers:writing-plans`.
+- **Build stav (lokálne na machine user-a):** `node_modules/` nainštalované, `packages/core/dist/` + `packages/mcp-server/dist/` skompilované. Pre clean checkout: `nvm use && npm install && npm run build`.
+
+Detailný zoznam commit-ov: `git -C ~/Projects/image-studio log --oneline main..feat/plan-1-core-mcp`.
+
 ## Čo to je
 
 **Image Studio** — VSCode extension (nie fork) s integrovaným image editorom + **MCP server**, cez ktorý AI asistenti (Claude Code, Cursor, Claude Desktop) konvertujú obrázky pomocou natural-language promptov.
@@ -178,22 +187,31 @@ Každý task v plane má TDD cyklus:
 
 **Claude Code MCP config pre lokálny dev** (kým nie je publikovaný na npm):
 
-```json
-{
-  "mcpServers": {
-    "image-studio": {
-      "command": "node",
-      "args": ["/Users/adam/Projects/image-studio/packages/mcp-server/dist/index.js"]
-    }
-  }
-}
+```bash
+claude mcp add --transport stdio --scope user image-studio \
+  -- node /Users/adam/Projects/image-studio/packages/mcp-server/dist/index.js
 ```
+
+**Pozor:** NIE cez `mcpServers` v `~/.claude/settings.json` — schéma to odmieta. MCP config ide do `~/.claude.json` cez `claude mcp add` CLI.
 
 ## Pointers
 
 - **Design spec (authoritative):** `docs/superpowers/specs/2026-04-22-image-editor-design.md`
-- **Plan 1 (core + MCP):** `docs/superpowers/plans/2026-04-23-plan-1-core-and-mcp-server.md`
-- **Plan 2 (extension):** písať po dokončení Plan 1
-- **Backup pôvodného fork-plánu:** `CLAUDE-backup.md` (iba archív)
-- **README:** `README.md` (user-facing, install + MCP setup)
-- **GitHub:** `https://github.com/adammery/image-studio`
+- **Plan 1 (core + MCP) — HOTOVÝ:** `docs/superpowers/plans/2026-04-23-plan-1-core-and-mcp-server.md`
+- **Plan 2 (VSCode extension) — TBD:** písať cez `superpowers:writing-plans` keď user povie "ideme na Plan 2". Čerpá zo spec Sekcie 5.
+- **Backup pôvodného fork-plánu:** `CLAUDE-backup.md` (iba archív, neaplikuje sa)
+- **README:** `README.md` (user-facing, install + `claude mcp add` setup)
+- **GitHub:** `https://github.com/adammery/image-studio` (branch `feat/plan-1-core-mcp` awaiting merge do `main`)
+
+## Pre novú session-ku (kontinuita)
+
+Ak user otvorí Claude Code v tomto repe a začne fresh session-ku, štartovací briefing:
+
+1. **Prečítaj tento CLAUDE.md celý** — pochopíš scope, architektúru, stav.
+2. **Skontroluj `git log --oneline -20`** — uvidíš celú prácu Plan 1.
+3. **`npm test` v root-e** — potvrdí 57 testov zelených.
+4. **Pozri pending work:**
+   - Ak branch `feat/plan-1-core-mcp` existuje a nie je mergnutý → PR otvorený, user pravdepodobne čaká na merge alebo štart Plan 2.
+   - Ak mergnutý/zmazaný → Plan 1 v `main`, pokračuj Plan 2.
+5. **Memory:** scope-discipline feedback uložený — žiadny scope creep do Figma/fork/Laravel/rotate/flip/GIF bez explicitného pokynu.
+6. **Spýtaj sa usera čo ďalej** — nespúšťaj implementáciu preemptívne.
