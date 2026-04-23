@@ -171,8 +171,8 @@ export class ImageEditorProvider implements vscode.CustomEditorProvider<ImageDoc
     const dstExt  = state.format === 'same' ? srcExt : (state.format === 'jpeg' ? 'jpg' : state.format);
     let dstPath   = dst.fsPath;
 
-    // Correct extension if needed
-    if (path.extname(dstPath).slice(1).toLowerCase() !== dstExt && dstPath !== srcPath) {
+    // Correct extension for format change (always, even when dst === src)
+    if (path.extname(dstPath).slice(1).toLowerCase() !== dstExt) {
       dstPath = dstPath.replace(/\.[^.]+$/, '') + '.' + dstExt;
     }
 

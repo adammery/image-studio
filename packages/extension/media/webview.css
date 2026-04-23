@@ -50,6 +50,9 @@ body { height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
   position: absolute; top: 0; left: 0;
   width: 100%; height: 100%; object-fit: contain; display: none;
 }
+/* before sits on top so clip-path reveals after underneath */
+#compare-before { z-index: 2; }
+#compare-after  { z-index: 1; }
 
 /* ── Compare pill (top-center) ────────────────────────────────── */
 #compare-pill {
