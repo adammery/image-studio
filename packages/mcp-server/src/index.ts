@@ -1,6 +1,7 @@
 #!/usr/bin/env node
-// Entry point for image-studio-mcp. Wires up the MCP server.
-// Full implementation arrives in Task 11.
+import { runServer } from './server.js';
 
-console.error('image-studio-mcp: not yet wired up');
-process.exit(1);
+runServer().catch((err) => {
+  console.error('image-studio-mcp failed to start:', err);
+  process.exit(1);
+});
