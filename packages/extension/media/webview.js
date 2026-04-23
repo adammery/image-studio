@@ -11,6 +11,7 @@ document.getElementById("root").innerHTML = /* html */
       <button data-mode="preview">Preview</button>
     </div>
     <button id="edit-toggle">\u270F Edit</button>
+    <div id="toast"></div>
     <div id="image-container">
       <img id="main-image" alt="Image preview" draggable="false">
       <img id="compare-before" alt="original" draggable="false">
@@ -436,19 +437,33 @@ function exitCropMode() {
   comparePill.style.display = "";
 }
 cropStart.addEventListener("click", enterCropMode);
-cropApply.addEventListener("click", () => {
+var toastEl = document.getElementById("toast");
+var toastTimer = null;
+function showToast(msg) {
+  if (toastTimer) clearTimeout(toastTimer);
+  toastEl.textContent = msg;
+  toastEl.classList.add("visible");
+  toastTimer = setTimeout(() => toastEl.classList.remove("visible"), 2e3);
+}
+function applyCropAction() {
+  if (!cropOverlay.classList.contains("active")) return;
+  const w = Math.round(cropDraft.w), h = Math.round(cropDraft.h);
   editState.crop = {
     x: Math.round(cropDraft.x),
     y: Math.round(cropDraft.y),
-    width: Math.round(cropDraft.w),
-    height: Math.round(cropDraft.h)
+    width: w,
+    height: h
   };
   exitCropMode();
   emitEditState();
-});
+  showToast(`\u2713 Cropped to ${w} \xD7 ${h} px`);
+}
+cropApply.addEventListener("click", applyCropAction);
 cropCancel.addEventListener("click", exitCropMode);
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && cropOverlay.classList.contains("active")) exitCropMode();
+  if (!cropOverlay.classList.contains("active")) return;
+  if (e.key === "Escape") exitCropMode();
+  if (e.key === "Enter") applyCropAction();
 });
 cropOverlay.addEventListener("mousedown", (e) => {
   const target = e.target;
@@ -617,8 +632,11 @@ resizeUnit.addEventListener("change", () => {
 });
 resizeApply.addEventListener("click", () => {
   if (!resizeValidate()) return;
-  editState.resize = { width: pxFromInput(resizeW.value, "w"), height: pxFromInput(resizeH.value, "h"), lockAspect: resizeLock.checked };
+  const w = pxFromInput(resizeW.value, "w");
+  const h = pxFromInput(resizeH.value, "h");
+  editState.resize = { width: w, height: h, lockAspect: resizeLock.checked };
   emitEditState();
+  showToast(`\u2713 Resized to ${w} \xD7 ${h} px`);
 });
 document.querySelectorAll(".section-head").forEach((h) => {
   h.addEventListener("click", () => h.classList.toggle("collapsed"));
@@ -682,6 +700,7 @@ window.addEventListener("message", (event) => {
       break;
     }
     case "saveComplete": {
+      showToast(`\u2713 Saved${msg.trashed ? " (old file replaced)" : ""}`);
       editState = { format: "same", quality: 85, lossless: false, compareMode: editState.compareMode, trashOriginal: false };
       formatSelect.value = "same";
       qualitySlider.value = "85";
