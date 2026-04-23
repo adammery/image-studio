@@ -40,9 +40,11 @@ echo "▶ Installing production deps in staging…"
 )
 
 echo "▶ Running vsce package…"
+# DO include dependencies (sharp has native binary, trash is ESM-only).
+# Staging dir has only production deps installed, so this stays small.
 (
   cd "$PKG_DIR"
-  npx --yes @vscode/vsce@latest package --no-dependencies -o "$EXT_DIR/image-studio.vsix"
+  npx --yes @vscode/vsce@latest package -o "$EXT_DIR/image-studio.vsix"
 )
 
 rm -rf "$PKG_DIR"

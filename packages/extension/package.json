@@ -5,6 +5,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Image editor (crop, resize, compress) for VSCode with Before/After preview.",
+  "icon": "media/icon.png",
   "license": "MIT",
   "repository": { "type": "git", "url": "https://github.com/adammery/image-studio" },
   "categories": ["Visualization", "Other"],
