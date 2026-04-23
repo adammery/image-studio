@@ -39,9 +39,6 @@ echo "▶ Installing production deps in staging…"
   npm install --omit=dev --no-package-lock --loglevel=error --no-workspaces
 )
 
-echo "▶ Inlining README screenshot as data URI…"
-node "$EXT_DIR/scripts/inline-image.mjs" "$PKG_DIR"
-
 echo "▶ Running vsce package…"
 # DO include dependencies (sharp has native binary, trash is ESM-only).
 # Staging dir has only production deps installed, so this stays small.
