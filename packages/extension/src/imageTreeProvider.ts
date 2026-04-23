@@ -10,41 +10,91 @@ function buildExcludeGlob(): string {
   return `**/{${folders.join(',')}}/**`;
 }
 
-class ImageItem extends vscode.TreeItem {
-  constructor(public readonly resourceUri: vscode.Uri) {
-    super(resourceUri, vscode.TreeItemCollapsibleState.None);
-    const rel = vscode.workspace.asRelativePath(resourceUri, false);
-    const dir = path.dirname(rel);
-    this.label = path.basename(resourceUri.fsPath);
-    this.description = dir === '.' ? '' : dir;
-    this.tooltip = resourceUri.fsPath;
-    this.iconPath = new vscode.ThemeIcon('file-media');
-    this.command = {
-      command: 'vscode.openWith',
-      title: 'Open in Image Studio',
-      arguments: [resourceUri, 'imageStudio.editor'],
-    };
-  }
+type NodeKind = 'workspace' | 'folder' | 'file';
+
+interface Node {
+  kind: NodeKind;
+  uri: vscode.Uri;
 }
 
-export class ImageTreeProvider implements vscode.TreeDataProvider<ImageItem> {
-  private readonly _onDidChange = new vscode.EventEmitter<ImageItem | undefined | void>();
+export class ImageTreeProvider implements vscode.TreeDataProvider<Node> {
+  private readonly _onDidChange = new vscode.EventEmitter<Node | undefined | void>();
   readonly onDidChangeTreeData = this._onDidChange.event;
 
-  async getChildren(element?: ImageItem): Promise<ImageItem[]> {
-    if (element) return [];
-    if (!vscode.workspace.workspaceFolders?.length) return [];
-    const files = await vscode.workspace.findFiles(IMAGE_GLOB, buildExcludeGlob());
-    return files
-      .sort((a, b) => a.fsPath.localeCompare(b.fsPath))
-      .map((uri) => new ImageItem(uri));
+  private files: vscode.Uri[] | null = null;
+
+  async getChildren(element?: Node): Promise<Node[]> {
+    const roots = vscode.workspace.workspaceFolders;
+    if (!roots?.length) return [];
+
+    if (!this.files) {
+      this.files = await vscode.workspace.findFiles(IMAGE_GLOB, buildExcludeGlob());
+    }
+
+    // Root level
+    if (!element) {
+      if (roots.length === 1) {
+        // Single workspace folder → show its direct contents
+        return this._childrenOf(roots[0].uri.fsPath);
+      }
+      // Multi-root → show each root as a workspace node
+      return roots.map((r) => ({ kind: 'workspace' as const, uri: r.uri }));
+    }
+
+    // Expanding a folder or workspace node → show its direct contents
+    return this._childrenOf(element.uri.fsPath);
   }
 
-  getTreeItem(item: ImageItem): vscode.TreeItem {
+  private _childrenOf(folderPath: string): Node[] {
+    if (!this.files) return [];
+    const folders = new Set<string>();
+    const files: vscode.Uri[] = [];
+    const prefix = folderPath.endsWith(path.sep) ? folderPath : folderPath + path.sep;
+
+    for (const f of this.files) {
+      if (!f.fsPath.startsWith(prefix)) continue;
+      const rel = f.fsPath.slice(prefix.length);
+      const segs = rel.split(path.sep);
+      if (segs.length === 1) {
+        files.push(f);
+      } else {
+        folders.add(path.join(folderPath, segs[0]));
+      }
+    }
+
+    const folderNodes: Node[] = [...folders]
+      .sort((a, b) => a.localeCompare(b))
+      .map((p) => ({ kind: 'folder', uri: vscode.Uri.file(p) }));
+    const fileNodes: Node[] = files
+      .sort((a, b) => a.fsPath.localeCompare(b.fsPath))
+      .map((uri) => ({ kind: 'file', uri }));
+
+    return [...folderNodes, ...fileNodes];
+  }
+
+  getTreeItem(node: Node): vscode.TreeItem {
+    if (node.kind === 'file') {
+      const item = new vscode.TreeItem(node.uri, vscode.TreeItemCollapsibleState.None);
+      item.label = path.basename(node.uri.fsPath);
+      item.tooltip = node.uri.fsPath;
+      item.command = {
+        command: 'vscode.openWith',
+        title: 'Open in Image Studio',
+        arguments: [node.uri, 'imageStudio.editor'],
+      };
+      // resourceUri set automatically from TreeItem constructor → file icon theme applies
+      return item;
+    }
+    // Folder or workspace node
+    const item = new vscode.TreeItem(node.uri, vscode.TreeItemCollapsibleState.Collapsed);
+    item.label = path.basename(node.uri.fsPath) || node.uri.fsPath;
+    item.tooltip = node.uri.fsPath;
+    item.iconPath = new vscode.ThemeIcon(node.kind === 'workspace' ? 'root-folder' : 'folder');
     return item;
   }
 
   refresh(): void {
+    this.files = null;
     this._onDidChange.fire();
   }
 }
