@@ -310,6 +310,7 @@ document.querySelectorAll('#compare-pill button').forEach((b) => {
     const mode = (b as HTMLButtonElement).dataset['mode'] as EditState['compareMode'];
     editState.compareMode = mode;
     applyCompareMode(mode);
+    emitEditState(); // persist compareMode via extension globalState
   });
 });
 
