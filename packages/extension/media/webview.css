@@ -74,22 +74,26 @@ button { cursor: pointer; border: none; background: none; }
 }
 #toast.visible { opacity: 1; transform: translate(-50%, 0); }
 
-/* ── Floating pills (compare / edit / zoom) shared ────────────── */
-.pill {
-  position: absolute; backdrop-filter: blur(16px);
+/* ── Shared pill base (applied to #compare-pill, #zoom-pill, #edit-toggle) ── */
+#compare-pill, #zoom-pill, #edit-toggle {
+  position: absolute; z-index: 10;
+  backdrop-filter: blur(16px);
   background: rgba(30, 30, 30, 0.82);
   border: 1px solid var(--border-strong); border-radius: 100px;
   box-shadow: 0 4px 16px rgba(0,0,0,.35);
-  z-index: 10;
 }
-.pill button {
+
+#compare-pill button, #zoom-pill button {
   background: transparent; color: var(--text-dim);
   padding: 6px 16px; border-radius: 100px;
   font-size: 12px; font-weight: 500;
   transition: background .12s, color .12s;
 }
-.pill button:hover:not(.active) { color: var(--text); background: rgba(255,255,255,.05); }
-.pill button.active { background: var(--accent); color: #fff; }
+#compare-pill button:hover:not(.active),
+#zoom-pill button:hover {
+  color: var(--text); background: rgba(255,255,255,.05);
+}
+#compare-pill button.active { background: var(--accent); color: #fff; }
 
 /* ── Compare pill ─────────────────────────────────────────────── */
 #compare-pill {
@@ -103,11 +107,6 @@ button { cursor: pointer; border: none; background: none; }
   padding: 6px 16px;
   color: var(--text-dim); font-size: 12px; font-weight: 500;
   transition: background .12s, color .12s;
-  backdrop-filter: blur(16px);
-  background: rgba(30, 30, 30, 0.82);
-  border: 1px solid var(--border-strong); border-radius: 100px;
-  box-shadow: 0 4px 16px rgba(0,0,0,.35);
-  position: absolute; z-index: 10;
 }
 #edit-toggle:hover { color: var(--text); background: rgba(45,45,45,.9); }
 #edit-toggle.active { background: var(--accent); color: #fff; border-color: transparent; }
@@ -119,8 +118,7 @@ button { cursor: pointer; border: none; background: none; }
   opacity: 0; transition: opacity .15s;
 }
 #zoom-pill.visible, #canvas-area:hover #zoom-pill { opacity: 1; }
-#zoom-pill button { padding: 5px 10px; font-size: 13px; color: var(--text-dim); }
-#zoom-pill button:hover { color: var(--text); background: rgba(255,255,255,.05); }
+#zoom-pill button { padding: 5px 12px; font-size: 13px; }
 #zoom-pct {
   padding: 5px 10px; min-width: 48px; text-align: center;
   font-variant-numeric: tabular-nums; font-size: 11px; font-weight: 500;
