@@ -10,18 +10,6 @@ export interface ImageDocument extends vscode.CustomDocument {
   readonly fsPath: string;
 }
 
-/** Returns true if the edit state would produce a file different from the source. */
-function isStateDirty(state: EditState): boolean {
-  return (
-    state.crop !== undefined ||
-    state.resize !== undefined ||
-    state.format !== 'same' ||
-    state.lossless !== false
-  );
-  // Note: quality alone is intentionally not dirty — it only affects output when
-  // format changes (which is covered above) or lossless toggles.
-}
-
 export class ImageEditorProvider implements vscode.CustomEditorProvider<ImageDocument> {
   public static readonly viewType = 'imageStudio.editor';
 
@@ -87,9 +75,7 @@ export class ImageEditorProvider implements vscode.CustomEditorProvider<ImageDoc
   private _setupFileWatcher(document: ImageDocument, panel: vscode.WebviewPanel): void {
     const watcher = vscode.workspace.createFileSystemWatcher(document.fsPath);
     watcher.onDidChange(async () => {
-      const state = this.editStates.get(document.uri.toString());
-      if (!state || !isStateDirty(state)) await this._sendInit(document, panel);
-      // If dirty: VSCode's native "File was modified externally" toast fires automatically
+      await this._sendInit(document, panel);
     });
     panel.onDidDispose(() => watcher.dispose());
     this.context.subscriptions.push(watcher);
@@ -141,7 +127,6 @@ export class ImageEditorProvider implements vscode.CustomEditorProvider<ImageDoc
       switch (msg.type) {
         case 'editStateChanged':
           this.editStates.set(document.uri.toString(), msg.state);
-          this._updateDirty(document, msg.state);
           this.encoders.get(document.uri.toString())?.schedule(document.fsPath, msg.state);
           this.context.globalState.update('compareMode', msg.state.compareMode);
           break;
@@ -157,12 +142,6 @@ export class ImageEditorProvider implements vscode.CustomEditorProvider<ImageDoc
           break;
       }
     });
-  }
-
-  private _updateDirty(document: ImageDocument, state: EditState): void {
-    if (isStateDirty(state)) {
-      this._onDidChangeCustomDocument.fire({ document });
-    }
   }
 
   private async _performSave(
