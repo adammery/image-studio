@@ -119,9 +119,9 @@ document.getElementById('root')!.innerHTML = /* html */ `
         <button class="btn primary" id="btn-save" style="flex:1">Save</button>
         <button class="btn"         id="btn-save-as" style="flex:1">Save As…</button>
       </div>
-      <label id="trash-row" class="check-row disabled" title="No original to remove — same file is being overwritten">
+      <label id="trash-row" class="check-row disabled" title="Nothing to replace — same file is being overwritten">
         <input type="checkbox" id="trash-check" disabled>
-        Move original to Trash after save
+        Replace old image
       </label>
     </div>
   </div>
@@ -258,7 +258,7 @@ function syncTrashUI(): void {
     trashCheck.disabled = true;
     trashCheck.checked  = false;
     editState.trashOriginal = false;
-    trashRow.title = 'No original to remove — same file is being overwritten';
+    trashRow.title = 'Nothing to replace — same file is being overwritten';
   }
 }
 function populateBefore(meta: ImageInfo, fname: string): void {
