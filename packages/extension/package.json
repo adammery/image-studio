@@ -53,6 +53,13 @@
         "contents": "No images in this workspace.\n[Open Folder](command:vscode.openFolder)\nSupported formats: PNG, JPG, WebP, AVIF"
       }
     ],
+    "keybindings": [
+      {
+        "command": "workbench.view.extension.imageStudio",
+        "key": "ctrl+shift+i",
+        "mac": "cmd+shift+i"
+      }
+    ],
     "configuration": {
       "title": "Image Studio",
       "properties": {
