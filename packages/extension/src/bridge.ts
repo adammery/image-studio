@@ -1,61 +1,18 @@
 import type { EditState, ImageInfo } from '@image-studio/core';
 
-// ── Extension → Webview ───────────────────────────────────────────────────
-
+// Messages from extension host → webview.
+// On external file change the extension resends `init` (not a separate event).
 export type ExtMessage =
-  | {
-      type: 'init';
-      imageUri: string;
-      meta: ImageInfo;
-      editState: EditState;
-    }
-  | {
-      type: 'previewReady';
-      previewDataUrl: string;  // base64 data URL — avoids CSP/localResourceRoots issues
-      size: number;
-      width: number;
-      height: number;
-    }
-  | {
-      type: 'previewError';
-      message: string;
-    }
-  | {
-      type: 'saveComplete';
-      trashed: boolean;
-      newUri?: string;
-    }
-  | {
-      type: 'showError';
-      message: string;
-    }
-  | {
-      type: 'fileChanged';
-      imageUri: string;
-      meta: ImageInfo;
-    };
+  | { type: 'init'; imageUri: string; meta: ImageInfo; editState: EditState }
+  | { type: 'previewReady'; previewDataUrl: string; size: number; width: number; height: number }
+  | { type: 'previewError'; message: string }
+  | { type: 'saveComplete'; trashed: boolean }
+  | { type: 'showError'; message: string };
 
-// ── Webview → Extension ───────────────────────────────────────────────────
-
+// Messages from webview → extension host.
+// Format-change modal is shown via VSCode native API from the extension, not
+// round-tripped through the webview.
 export type WvMessage =
-  | {
-      type: 'editStateChanged';
-      state: EditState;
-    }
-  | {
-      type: 'save';
-      trashOriginal: boolean;
-    }
-  | {
-      type: 'saveAs';
-    }
-  | {
-      type: 'formatChangeConfirmed';
-      trashOriginal: boolean;
-    }
-  | {
-      type: 'formatChangeCancelled';
-    }
-  | {
-      type: 'formatChangeSaveAs';
-    };
+  | { type: 'editStateChanged'; state: EditState }
+  | { type: 'save'; trashOriginal: boolean }
+  | { type: 'saveAs' };

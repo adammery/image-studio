@@ -736,15 +736,5 @@ window.addEventListener('message', (event) => {
       syncCompressUI(); syncTrashUI(); syncPresetButtons(85);
       break;
     }
-    case 'fileChanged': {
-      srcUri  = msg.imageUri as string;
-      srcMeta = msg.meta as ImageInfo;
-      srcPath = basename(decodeURIComponent(srcUri.split('?')[0]));
-      mainImage.src = srcUri;
-      populateBefore(srcMeta, srcPath);
-      break;
-    }
   }
 });
-
-void btnSave; // used in event listener above

@@ -722,14 +722,6 @@ window.addEventListener("message", (event) => {
       syncPresetButtons(85);
       break;
     }
-    case "fileChanged": {
-      srcUri = msg.imageUri;
-      srcMeta = msg.meta;
-      srcPath = basename(decodeURIComponent(srcUri.split("?")[0]));
-      mainImage.src = srcUri;
-      populateBefore(srcMeta, srcPath);
-      break;
-    }
   }
 });
 //# sourceMappingURL=webview.js.map

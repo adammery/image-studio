@@ -201,7 +201,7 @@ export class ImageEditorProvider implements vscode.CustomEditorProvider<ImageDoc
 
       const panels = this._panelsForDocument.get(document.uri.toString());
       panels?.forEach((p) =>
-        postToWebview(p, { type: 'saveComplete', trashed: result.originalTrashed, newUri: dstPath !== srcPath ? dstPath : undefined }),
+        postToWebview(p, { type: 'saveComplete', trashed: result.originalTrashed }),
       );
 
       if (dstPath !== srcPath) {
