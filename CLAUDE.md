@@ -1,226 +1,199 @@
-# CLAUDE.md — VSCode Image Editor Fork
+# CLAUDE.md — Image Studio
 
-## Čo buildujeme
+Referenčná karta pre prácu na tomto repe. Pri práci na čomkoľvek v `image-studio/` toto precizuje ako projekt funguje, kam sa zapisuje, a čo robiť NEMÁME.
 
-Fork **Code - OSS** (open-source základ VSCode) s natívne zabudovaným image editorom.
-Nie extension — priamo integrované do editora ako rozšírenie existujúceho `imagePreview` modulu.
+## Čo to je
 
-Inšpirácia: Cursor, Windsurf, VSCodium — všetko sú forky Code - OSS s vlastnými úpravami.
+**Image Studio** — VSCode extension (nie fork) s integrovaným image editorom + **MCP server**, cez ktorý AI asistenti (Claude Code, Cursor, Claude Desktop) konvertujú obrázky pomocou natural-language promptov.
 
----
+**Príklad AI flow:**
+> User v Claude Code chat-e: *"Skonvertuj všetky PNG v `/icons` na webp quality 80."*
+>
+> Claude zavolá MCP tool `batch_convert({ pattern, format: 'webp', quality: 80 })` → `core/` volá sharp → súbory na disku sú preformátované → Claude reportuje výsledok.
 
-## Ciele projektu
+**Extension + MCP spolu tvoria jeden produkt,** distribuovaný ako npm workspace monorepo.
 
-### Primárny cieľ
-Nahradiť jednoduchý read-only image preview vo VSCode plnohodnotným **image editorom** priamo v editore — bez externých nástrojov, bez API, 100% lokálne a offline.
+## Extension, nie fork
 
-### Čo chceme vedieť robiť
-1. **Crop** — drag handles na canvase, výber oblasti, aplikovanie
-2. **Resize** — zmena rozmerov v px alebo %
-3. **Rotate / Flip** — 90°, 180°, horizontálne/vertikálne
-4. **Konverzia formátov** — PNG → WebP, AVIF, JPEG, GIF a naopak
-5. **Kompresia** — režim lossless alebo lossy s presnou hodnotou kvality (0–100), živý náhľad veľkosti výsledného súboru
-6. **Export / Save** — uložiť ako nový súbor vedľa originálu alebo prepísať
+Pôvodne plánovaný fork Code-OSS bol vedome odmietnutý v prospech extension-u:
 
----
+- Setup: hodiny vs mesiace
+- Žiadny upstream-sync pain
+- Funguje aj v Cursor / Windsurf / VSCodium
+- Distribúcia: 100 KB `.vsix`, nie 200 MB appka per platforma
+- Budúci fork zostáva možný — extension kód sa portne do `extensions/` fork-u bez prepisovania
 
-## Technický stack
+## Scope discipline (kritické)
 
-| Vrstva | Technológia | Účel |
-|---|---|---|
-| Základ | Code - OSS (Microsoft/vscode repo) | Fork základu |
-| Jazyk | TypeScript | Celý VSCode je v TS |
-| Image operácie | `sharp` (npm) | Crop, resize, konverzia, kompresia |
-| Editor UI | WebView API + Canvas API | Crop handles, preview |
-| Build systém | Gulp (existujúci v repo) | Rovnaký ako VSCode |
-| Runtime | Electron (Node.js backend) | Sharp beží na Node strane |
+**Robíme jednu vec a dobre: image editor + AI konverzia.**
 
-### Prečo `sharp` a nie externé API
-- Beží lokálne, žiadny internet
-- Najrýchlejšia Node.js image knižnica (libvips pod kapotou)
-- Podporuje: PNG, JPEG, WebP, AVIF, GIF, TIFF, SVG
-- Open-source, MIT licencia
+Explicitne MIMO scope (nerozširovať bez pokynu usera):
+- Rebranding na vlastný IDE / fork
+- Figma integrácia
+- Laravel focus, PHP/Blade tools
+- Performance tuning / startup optimization
+- Custom chrome / UI cleanup
+- Akýkoľvek iný non-image-editing feature
 
----
+Tieto témy prišli v raných brainstoring-och, ale boli stripnuté. Ak sa k nim niekedy vrátime, budú to **samostatné projekty**, nie rozšírenie Image Studio.
 
 ## Architektúra
 
-```
-Code - OSS fork
-└── src/vs/workbench/contrib/
-    └── imagePreview/              ← existujúci modul (len read-only preview)
-        ├── browser/
-        │   ├── imagePreviewEditor.ts     ← UPRAVIŤ: pridať toolbar + canvas
-        │   ├── imageEditorWebview.ts     ← NOVÝ: WebView s crop UI
-        │   └── imageEditorToolbar.ts     ← NOVÝ: tlačidlá akcií
-        └── node/
-            └── imageProcessor.ts        ← NOVÝ: sharp operácie (Node strana)
-```
-
-### Komunikácia WebView ↔ Node
+Monorepo (npm workspaces) s 3 balíkmi:
 
 ```
-[WebView Canvas UI]
-      ↕  postMessage
-[Extension Host - TypeScript]
-      ↕  Node.js call
-[sharp - imageProcessor.ts]
-      ↓
-[Súbor na disku]
+image-studio/
+├── packages/
+│   ├── core/         sharp wrappers, pure TS library (žiadny VSCode/MCP import)
+│   ├── extension/    VSCode extension + webview GUI (Plan 2)
+│   └── mcp-server/   MCP protocol server (Plan 1)
+├── docs/
+│   └── superpowers/
+│       ├── specs/    design docs (authoritative)
+│       └── plans/    implementation plans (task-by-task TDD)
+├── package.json      workspaces root
+├── tsconfig.base.json
+└── .nvmrc            Node 20 LTS
 ```
 
----
+**Pravidlá hraníc:**
 
-## Fázy vývoja
+- `core/` je jediným miestom pre sharp volania
+- `core/` nemá závislosť na `vscode` ani na MCP SDK
+- `extension/` a `mcp-server/` majú `@image-studio/core` ako dependency cez workspace link
+- Každý balík má vlastný `package.json`, `tsconfig.json`, `vitest.config.ts`
 
-### Fáza 1 — Fork & Setup
-- [ ] Forknúť `microsoft/vscode` repo
-- [ ] Nastaviť build prostredie (Node.js, Yarn, Python)
-- [ ] Prvý úspešný build (`./scripts/code.sh`)
-- [ ] Premenúvať / rebranding (voliteľné)
+## Tech stack
 
-### Fáza 2 — Image Preview rozšírenie
-- [ ] Pridať `sharp` do Electron node_modules
-- [ ] Otvoriť existujúci `imagePreviewEditor.ts` a pochopiť štruktúru
-- [ ] Pridať toolbar pod/nad preview (Rotate, Save As)
-- [ ] Implementovať základný export cez sharp
+| Vrstva | Package | Verzia |
+|---|---|---|
+| Jazyk | TypeScript | 5.x |
+| Image | `sharp` | ~0.33.x |
+| VSCode | `@types/vscode` | 1.90+ |
+| MCP | `@modelcontextprotocol/sdk` | 1.x |
+| Testy | `vitest` | 1.x |
+| Glob | `fast-glob` | 3.x |
+| Lint | `eslint` + `@typescript-eslint` | 8/7 |
+| Packaging | `vsce` | latest (Plan 2) |
 
-### Fáza 3 — Crop UI
-- [ ] WebView s `<canvas>` elementom
-- [ ] Drag handles na canvase (JavaScript)
-- [ ] Odoslať crop coords cez `postMessage` do Node
-- [ ] Sharp `extract()` podľa coords → uložiť
+## MVP scope (čo ideme stavať v prvých dvoch planoch)
 
-### Fáza 4 — Konverzia & Kompresia
-- [ ] UI panel: výber formátu (PNG / WebP / AVIF / JPEG)
-- [ ] Toggle: **Lossless** (checkbox) — ak zaškrtnuté, slider sa skryje
-- [ ] Slider kvality (0–100) pre lossy režim, s preset tlačidlami (92 / 80 / 60)
-- [ ] Live preview veľkosti výsledného súboru pred uložením
-- [ ] Sharp konverzia + uloženie
+**Plan 1 — Core + MCP Server** (`docs/superpowers/plans/2026-04-23-plan-1-core-and-mcp-server.md`)
 
-### Fáza 5 — Polish
-- [ ] Undo/Redo historia
-- [ ] Porovnanie pred/po (split view)
-- [ ] Keyboard skratky
-- [ ] Dark/light theme podpora
+12 tasks:
+1. Monorepo root setup
+2. Core package skeleton + types
+3. Test fixtures generator (programmatic)
+4. `getImageInfo` (probe.ts)
+5. `convertImage`
+6. `resizeImage`
+7. `cropImage`
+8. `batchConvert`
+9. MCP server package skeleton
+10. Validation utilities (paths, size, globs)
+11. MCP server + 5 tools registered + integration tests
+12. End-to-end verifikácia s Claude Code
 
----
+Výstup: funkčný `image-studio-mcp` npm package, Claude Code cez MCP volá všetkých 5 tools.
 
-## Kľúčové súbory v repo
+**Plan 2 — VSCode Extension GUI** (bude napísaný po dokončení Plan 1)
 
-```
-vscode/
-├── src/vs/workbench/contrib/imagePreview/   ← hlavná práca tu
-├── extensions/                               ← built-in extensiony
-├── build/                                    ← gulp build skripty
-└── scripts/
-    ├── code.sh          ← spustenie v dev mode (macOS/Linux)
-    └── code.bat         ← spustenie v dev mode (Windows)
-```
+CustomEditorProvider + webview + toolbar + crop drag handles + quality slider + save semantics.
 
----
+### NIE je v MVP (odložené):
 
-## Lokálny build (prvý setup)
+- Rotate 90° / Flip H/V
+- GIF support (multi-frame)
+- Undo/Redo history
+- Split-view pred/po
+- Live compression preview (beyond status-bar estimate v Plan 2)
+- CLI wrapper (príde neskôr ako tenký shim nad `core/`)
+- Dark/light theme overrides
+
+## MCP security constraints (boundary rules)
+
+Vynucované v `packages/mcp-server/src/validation.ts`:
+
+- **Absolute paths only** — no relative, no `..` traversal
+- **Max 100 MB per file**
+- **Glob patterns musia mať konkrétny base directory** (`/Users/adam/foo/**/*`, nie `**/*`)
+- **Overwrite protection:** ak `dst` existuje a `overwrite: true` nie je nastavené → `OutputExists` error
+
+## Development workflow
 
 ```bash
-# 1. Klonovanie
-git clone https://github.com/microsoft/vscode.git
-cd vscode
-
-# 2. Závislosti
-yarn install
-
-# 3. Build
-yarn run compile
-
-# 4. Spustenie
-./scripts/code.sh       # macOS/Linux
-.\scripts\code.bat      # Windows
+nvm use                          # Node 20 (from .nvmrc)
+npm install                      # installs all workspace packages
+npm run dev                      # watch mode (all packages in parallel)
+npm test                         # run tests in all packages
+npm test -- --watch              # continuous testing
+npm run build                    # compile dist/ for all packages
+npm run lint                     # ESLint check
 ```
 
-Požiadavky: Node.js 18+, Python 3.x, Git, C++ build tools (pre sharp/native modules)
+**Per-package:**
 
----
-
-## Sharp — kompresia a konverzia (detaily)
-
-```typescript
-import sharp from 'sharp';
-
-// WebP — lossless
-await sharp('input.png').webp({ lossless: true }).toFile('output.webp');
-
-// WebP — lossy s kvalitou
-await sharp('input.png').webp({ quality: 92 }).toFile('output.webp');
-await sharp('input.png').webp({ quality: 80 }).toFile('output.webp');
-await sharp('input.png').webp({ quality: 60 }).toFile('output.webp');
-
-// AVIF — lossless
-await sharp('input.png').avif({ lossless: true }).toFile('output.avif');
-
-// AVIF — lossy (quality 1–100, default 50)
-await sharp('input.png').avif({ quality: 80 }).toFile('output.avif');
-
-// JPEG
-await sharp('input.png').jpeg({ quality: 85 }).toFile('output.jpg');
-
-// PNG (lossless vždy, compressionLevel 0–9)
-await sharp('input.jpg').png({ compressionLevel: 9 }).toFile('output.png');
-
-// Live preview veľkosti — bez zápisu na disk
-const { data, info } = await sharp('input.png')
-  .webp({ quality: 80 })
-  .toBuffer({ resolveWithObject: true });
-console.log(`Veľkosť: ${info.size} bytes (${(info.size / 1024).toFixed(1)} KB)`);
+```bash
+npm test --workspace=packages/core --prefix /Users/adam/Projects/image-studio
+npm run build --workspace=packages/mcp-server --prefix /Users/adam/Projects/image-studio
 ```
 
-### Prehľad možností podľa formátu
+## Git conventions
 
-| Formát | Lossless | Quality range | Poznámka |
-|---|---|---|---|
-| WebP | ✅ áno | 0–100 | Najlepší pomer kvalita/veľkosť |
-| AVIF | ✅ áno | 1–100 | Najlepšia kompresia, pomalší encode |
-| JPEG | ❌ nie | 1–100 | Len lossy |
-| PNG | ✅ vždy | compressionLevel 0–9 | Vždy lossless, level = rýchlosť |
+- `main` je single source of truth
+- **Atomické commits: jeden task = jeden commit** (podľa `docs/superpowers/plans/*.md`)
+- Commit message po anglicky, imperatívny tón ("Add X", "Fix Y", "Refactor Z")
+- Nikdy `--amend` po push-i na remote
+- Remote: `https://github.com/adammery/image-studio`
 
----
+## TDD default
 
-## Sharp — základné príklady
+Každý task v plane má TDD cyklus:
 
-```typescript
-import sharp from 'sharp';
+1. Write failing test
+2. Run, verify it fails for the RIGHT reason
+3. Write minimal implementation
+4. Run, verify it passes
+5. Commit
 
-// Konverzia PNG → WebP s kompresiou
-await sharp('input.png')
-  .webp({ quality: 80 })
-  .toFile('output.webp');
+**Nepíšeme kód bez failing testu.** Výnimky: trivial config súbory (tsconfig, package.json skeleton).
 
-// Crop
-await sharp('input.png')
-  .extract({ left: 10, top: 10, width: 300, height: 200 })
-  .toFile('cropped.png');
+## Testing strategy
 
-// Resize
-await sharp('input.png')
-  .resize(800, 600)
-  .toFile('resized.png');
+- **`core/`** — plné unit testy cez vitest, fixtures generované programatically v `beforeAll()`, target >90% coverage
+- **`mcp-server/`** — integration testy: volaj `dispatchTool` priamo, verify output + structured error responses
+- **`extension/`** (Plan 2) — sparse auto-testy (VSCode extension testing je flaky), **hlavné overenie je manuálne** cez Extension Development Host (F5)
 
-// Zistenie veľkosti bez uloženia (pre preview)
-const { size } = await sharp('input.png')
-  .webp({ quality: 80 })
-  .toBuffer({ resolveWithObject: true });
-console.log(`Výsledok: ${size} bytes`);
+## Session notes pre Claude Code
+
+**User je moje oči pre GUI.** VSCode Extension Development Host spúšťa user. Keď implementujem UI, user klikne a reportuje. Nemôžem sa spoľahnúť na "vyzerá to OK" — musím sa pýtať na konkrétne symptómy.
+
+**Scope creep je zakázaný.** Ak user spomenie feature mimo MVP, poviem: "to nie je v MVP scope podľa `docs/superpowers/specs/2026-04-22-image-editor-design.md`, chceš to pridať explicitne?"
+
+**Subagent-driven execution je default** pre plány. Pre každý task v pláne → čerstvý subagent cez `superpowers:subagent-driven-development`.
+
+**Commits robíme často.** Každý zelený test → commit. Žiadne "commit na konci session-u".
+
+**Sharp má natívne binary per platform.** Pri prvom install sa môže správať inak na macOS vs Linux — ak build zlyhá na `node-gyp`, často pomôže `npm rebuild sharp`.
+
+**Claude Code MCP config pre lokálny dev** (kým nie je publikovaný na npm):
+
+```json
+{
+  "mcpServers": {
+    "image-studio": {
+      "command": "node",
+      "args": ["/Users/adam/Projects/image-studio/packages/mcp-server/dist/index.js"]
+    }
+  }
+}
 ```
 
----
+## Pointers
 
-## Poznámky
-
-- **Figma integrácia** — odložená, nie v MVP scope
-- **Nepoužívame externé API** — všetko beží lokálne cez sharp
-- **Kompatibilita** — fork by mal fungovať na Windows, macOS, Linux (rovnako ako VSCode)
-- Projekt je vhodný aj ako **portfolio** — ukazuje znalosť Electron, TypeScript, image processing
-
----
-
-*Posledná aktualizácia: Apríl 2026*
+- **Design spec (authoritative):** `docs/superpowers/specs/2026-04-22-image-editor-design.md`
+- **Plan 1 (core + MCP):** `docs/superpowers/plans/2026-04-23-plan-1-core-and-mcp-server.md`
+- **Plan 2 (extension):** písať po dokončení Plan 1
+- **Backup pôvodného fork-plánu:** `CLAUDE-backup.md` (iba archív)
+- **README:** `README.md` (user-facing, install + MCP setup)
+- **GitHub:** `https://github.com/adammery/image-studio`
