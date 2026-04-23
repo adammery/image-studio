@@ -4,14 +4,18 @@ Image editor and AI converter for VSCode.
 
 ## Status
 
-MVP under active development. See `docs/superpowers/specs/` for the design
-and `docs/superpowers/plans/` for implementation plans.
+**MVP complete.** Both planned phases shipped:
+
+- **Plan 1:** `@image-studio/core` + `image-studio-mcp` (5 MCP tools for AI-driven conversion).
+- **Plan 2:** `@image-studio/extension` — VSCode extension with custom image editor, Activity Bar sidebar, compare/zoom/crop/resize/compress, and `.vsix` packaging.
+
+69 tests passing (45 core + 21 mcp-server + 3 extension).
 
 ## Packages
 
-- `packages/core/` — sharp-based image operations (pure library)
+- `packages/core/` — sharp-based image operations (pure library, no VSCode/MCP deps)
 - `packages/mcp-server/` — MCP server exposing operations for AI clients
-- `packages/extension/` — VSCode extension (Plan 2, not yet implemented)
+- `packages/extension/` — VSCode extension (webview GUI + `.vsix` packager)
 
 ## Development
 
@@ -23,6 +27,21 @@ npm install        # installs all workspace packages
 npm test           # runs all package tests
 npm run build      # compiles dist/ for all packages
 ```
+
+## Using the VSCode extension
+
+```bash
+cd packages/extension
+./scripts/package.sh                                  # builds image-studio.vsix
+code --install-extension image-studio.vsix
+```
+
+The `.vsix` is platform-specific (ships sharp's native libvips binary). For macOS Apple Silicon out of the box; other platforms need a re-package on that OS.
+
+After install:
+- Click the Image Studio icon in the Activity Bar (or `Cmd+Shift+\` / `Ctrl+Shift+\`).
+- Open any PNG / JPG / WebP / AVIF from the tree or file explorer.
+- See `packages/extension/README.md` for full feature list and keyboard shortcuts.
 
 ## Using the MCP server with Claude Code (local development)
 
