@@ -162,25 +162,64 @@ export async function dispatchTool(
         return ok(result);
       }
       case 'batch_convert': {
-        const files = args.files as string[] | undefined;
+        const filesArg = args.files as string[] | undefined;
         const pattern = args.pattern as string | undefined;
-        if (files) {
-          for (const f of files) validateAbsolutePath(f);
-          for (const f of files) {
-            try { validateFileSize(statSync(f).size, f); } catch (_) { /* per-file failure handled in batchConvert */ }
-          }
+
+        if (filesArg) {
+          for (const f of filesArg) validateAbsolutePath(f);
         }
         if (pattern) validateGlobPattern(pattern);
+
+        // Resolve glob to explicit list so we can size-check uniformly
+        let workingFiles: string[] | undefined = filesArg;
+        if (!filesArg && pattern) {
+          const fg = (await import('fast-glob')).default;
+          workingFiles = await fg(pattern, { onlyFiles: true, absolute: true });
+          if (workingFiles.length === 0) {
+            return fail({
+              error: {
+                code: 'NoFilesMatched',
+                message: `No files matched pattern: ${pattern}`
+              }
+            });
+          }
+        }
+
+        // Per-file size check: oversized → preFailed, missing → pass through
+        // (core's batchConvert records missing files in its own failed[] array).
+        const preFailed: Array<{ src: string; error: string }> = [];
+        if (workingFiles) {
+          const passing: string[] = [];
+          for (const f of workingFiles) {
+            try {
+              validateFileSize(statSync(f).size, f);
+              passing.push(f);
+            } catch (err) {
+              const e = err as NodeJS.ErrnoException;
+              if (e.code === 'ENOENT') {
+                passing.push(f);
+              } else {
+                preFailed.push({ src: f, error: (err as Error).message });
+              }
+            }
+          }
+          workingFiles = passing;
+        }
+
         const result = await batchConvert({
-          files,
-          pattern,
+          files: workingFiles,
+          pattern: workingFiles ? undefined : pattern,
           format: args.format as ImageFormat,
           quality: args.quality as number | undefined,
           lossless: args.lossless as boolean | undefined,
           outSuffix: args.outSuffix as string | undefined,
           overwrite: args.overwrite as boolean | undefined
         });
-        return ok(result);
+
+        return ok({
+          ...result,
+          failed: [...result.failed, ...preFailed]
+        });
       }
       default:
         return fail({

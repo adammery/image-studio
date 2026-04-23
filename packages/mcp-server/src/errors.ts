@@ -22,6 +22,9 @@ export function toStructuredError(err: unknown): StructuredError {
   const e = err as Error;
   const msg = e?.message ?? String(err);
 
+  if (/ENOENT|no such file or directory/i.test(msg)) {
+    return { error: { code: 'FileNotFound', message: msg } };
+  }
   if (/too large/i.test(msg)) {
     return { error: { code: 'TooLarge', message: msg } };
   }

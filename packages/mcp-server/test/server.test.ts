@@ -82,4 +82,21 @@ describe('MCP tool dispatch', () => {
     const parsed = JSON.parse(result.content[0].text);
     expect(parsed.error.code).toBe('InvalidFormat');
   });
+
+  it('get_image_info returns FileNotFound for missing file (not SharpError)', async () => {
+    const result = await dispatchTool('get_image_info', {
+      src: '/tmp/image-studio-does-not-exist-xyz.png'
+    });
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.error.code).toBe('FileNotFound');
+  });
+
+  it('convert_image returns FileNotFound for missing file (not SharpError)', async () => {
+    const result = await dispatchTool('convert_image', {
+      src: '/tmp/image-studio-does-not-exist-xyz.png',
+      format: 'webp'
+    });
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed.error.code).toBe('FileNotFound');
+  });
 });
