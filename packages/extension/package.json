@@ -56,8 +56,8 @@
     "keybindings": [
       {
         "command": "workbench.view.extension.imageStudio",
-        "key": "ctrl+shift+i",
-        "mac": "cmd+shift+i"
+        "key": "ctrl+shift+\\",
+        "mac": "cmd+shift+\\"
       }
     ],
     "configuration": {
