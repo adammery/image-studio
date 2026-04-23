@@ -52,7 +52,8 @@ document.getElementById('root')!.innerHTML = /* html */ `
 
       <div class="panel-section" id="section-crop">
         <div class="section-head" data-section="crop">
-          <span class="section-caret">▾</span> Crop
+          <span class="section-icon">✂</span> Crop
+          <span class="section-caret">▾</span>
         </div>
         <div class="section-body">
           <button class="btn full" id="crop-start">Start crop</button>
@@ -61,7 +62,8 @@ document.getElementById('root')!.innerHTML = /* html */ `
 
       <div class="panel-section" id="section-resize">
         <div class="section-head" data-section="resize">
-          <span class="section-caret">▾</span> Resize
+          <span class="section-icon">⇔</span> Resize
+          <span class="section-caret">▾</span>
         </div>
         <div class="section-body">
           <div class="row">
@@ -83,7 +85,8 @@ document.getElementById('root')!.innerHTML = /* html */ `
 
       <div class="panel-section" id="section-compress">
         <div class="section-head" data-section="compress">
-          <span class="section-caret">▾</span> Compress
+          <span class="section-icon">◆</span> Compress
+          <span class="section-caret">▾</span>
         </div>
         <div class="section-body">
           <div class="row">
