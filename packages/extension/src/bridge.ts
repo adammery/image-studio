@@ -11,7 +11,7 @@ export type ExtMessage =
     }
   | {
       type: 'previewReady';
-      previewUri: string;
+      previewDataUrl: string;  // base64 data URL — avoids CSP/localResourceRoots issues
       size: number;
       width: number;
       height: number;

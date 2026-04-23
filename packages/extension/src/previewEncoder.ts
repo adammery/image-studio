@@ -7,7 +7,7 @@ import type { EditState } from '@image-studio/core';
 const DEBOUNCE_MS = 300;
 
 export type PreviewResult =
-  | { ok: true; previewUri: string; size: number; width: number; height: number }
+  | { ok: true; previewDataUrl: string; size: number; width: number; height: number }
   | { ok: false; message: string };
 
 export class PreviewEncoder {
@@ -51,11 +51,12 @@ export class PreviewEncoder {
       }
       const buffer = await pipeline.toBuffer();
       if (this.disposed) return;
-      const ext = state.format === 'same' ? path.extname(srcPath) : `.${state.format === 'jpeg' ? 'jpg' : state.format}`;
-      const tmpFile = path.join(this.tempDir, `preview${ext}`);
-      fs.writeFileSync(tmpFile, buffer);
-      const meta = await sharp(tmpFile).metadata();
-      this.onResult({ ok: true, previewUri: tmpFile, size: buffer.length, width: meta.width!, height: meta.height! });
+      const meta = await sharp(buffer).metadata();
+      const mime = state.format === 'same'
+        ? `image/${(meta.format ?? 'png').replace('jpg', 'jpeg')}`
+        : `image/${state.format === 'jpeg' ? 'jpeg' : state.format}`;
+      const previewDataUrl = `data:${mime};base64,${buffer.toString('base64')}`;
+      this.onResult({ ok: true, previewDataUrl, size: buffer.length, width: meta.width!, height: meta.height! });
     } catch (err) {
       if (!this.disposed) this.onResult({ ok: false, message: (err as Error).message });
     }

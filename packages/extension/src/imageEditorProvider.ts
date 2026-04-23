@@ -55,10 +55,7 @@ export class ImageEditorProvider implements vscode.CustomEditorProvider<ImageDoc
 
     const encoder = new PreviewEncoder(this.context, (result) => {
       if (result.ok) {
-        const previewUri = webviewPanel.webview.asWebviewUri(
-          vscode.Uri.file(result.previewUri),
-        ).toString();
-        postToWebview(webviewPanel, { type: 'previewReady', previewUri, size: result.size, width: result.width, height: result.height });
+        postToWebview(webviewPanel, { type: 'previewReady', previewDataUrl: result.previewDataUrl, size: result.size, width: result.width, height: result.height });
       } else {
         postToWebview(webviewPanel, { type: 'previewError', message: result.message });
         vscode.window.showErrorMessage(`Image Studio preview: ${result.message}`);

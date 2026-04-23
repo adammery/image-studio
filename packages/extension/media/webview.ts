@@ -577,11 +577,11 @@ window.addEventListener('message', (event) => {
       break;
     }
     case 'previewReady': {
-      const { previewUri, size, width, height } = msg as { previewUri: string; size: number; width: number; height: number };
+      const { previewDataUrl, size, width, height } = msg as { previewDataUrl: string; size: number; width: number; height: number };
       populateAfter(size, width, height);
-      lastPreviewUri = previewUri;
+      lastPreviewUri = previewDataUrl;
       if (editState.compareMode !== 'off') {
-        compareAfterImg.src = previewUri;
+        compareAfterImg.src = previewDataUrl;
         if (editState.compareMode === 'sxs') { compareBeforeImg.style.clipPath = 'inset(0 50% 0 0)'; compareAfterImg.style.clipPath = 'inset(0 0 0 50%)'; }
       }
       break;
