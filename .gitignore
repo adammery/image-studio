@@ -38,3 +38,6 @@ temp/
 
 # Brainstorming companion (local-only mockups + state)
 .superpowers/
+
+# Git worktrees
+.worktrees/
