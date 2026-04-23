@@ -1,0 +1,21 @@
+{
+  "name": "@image-studio/core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Image operations (sharp wrappers) for Image Studio",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "sharp": "^0.33.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.12"
+  }
+}
