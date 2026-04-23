@@ -74,6 +74,42 @@ export interface BatchResult {
   totalOut: number;
 }
 
+// ── Plan 2: edit pipeline ──────────────────────────────────────────────────
+
+export type EditFormat = 'same' | 'png' | 'jpeg' | 'webp' | 'avif';
+
+export interface EditState {
+  crop?:    { x: number; y: number; width: number; height: number };
+  resize?:  { width: number; height: number; lockAspect: boolean };
+  format:   EditFormat;
+  quality:  number;       // 0–100; ignored when lossless=true or format='png'
+  lossless: boolean;      // WebP/AVIF only
+  compareMode:   'off' | 'slider' | 'sxs';  // UI-only; does not dirty tab
+  trashOriginal: boolean;                    // UI-only; does not dirty tab
+}
+
+export interface ApplyEditsOptions {
+  overwrite?: boolean;
+}
+
+export interface ApplyEditsResult {
+  dst: string;
+  size: number;
+  width: number;
+  height: number;
+  originalTrashed: boolean;
+}
+
+export function defaultEditState(): EditState {
+  return {
+    format: 'same',
+    quality: 80,
+    lossless: false,
+    compareMode: 'slider',
+    trashOriginal: false,
+  };
+}
+
 export class CoreError extends Error {
   constructor(
     public readonly code:
