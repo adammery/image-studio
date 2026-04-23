@@ -1,8 +1,9 @@
-# Image Editor Pro — Design Spec
+# Image Studio — Design Spec
 
 **Date:** 2026-04-22
 **Status:** Draft (pending user approval)
-**Working name:** `image-editor-pro` (final brand name TBD by user)
+**Name:** `image-studio` (npm / git / technical id)
+**Display name:** Image Studio
 
 ---
 
@@ -43,7 +44,7 @@ Explicitly **NOT in MVP.** May come in later iterations:
 Monorepo with three packages under `packages/`:
 
 ```
-image-editor-pro/
+image-studio/
 ├── packages/
 │   ├── core/            sharp operations; pure library
 │   ├── extension/       VSCode extension + webview
@@ -175,7 +176,7 @@ When Claude (via MCP) modifies a file that's currently open in the GUI editor, V
 
 ### 6.1 MCP server
 
-Standalone Node process, distributed as npm package `image-editor-pro-mcp`. Launched by the MCP client (Claude Code, Cursor, etc.) per user config. Completely independent from the extension — either can run without the other.
+Standalone Node process, distributed as npm package `image-studio-mcp`. Launched by the MCP client (Claude Code, Cursor, etc.) per user config. Completely independent from the extension — either can run without the other.
 
 **Sample Claude Code configuration:**
 
@@ -184,7 +185,7 @@ Standalone Node process, distributed as npm package `image-editor-pro-mcp`. Laun
   "mcpServers": {
     "image-editor": {
       "command": "npx",
-      "args": ["-y", "image-editor-pro-mcp"]
+      "args": ["-y", "image-studio-mcp"]
     }
   }
 }
@@ -288,7 +289,7 @@ All standard, well-maintained, no vendor lock-in.
 ## 8. File Structure
 
 ```
-image-editor-pro/
+image-studio/
 ├── packages/
 │   ├── core/
 │   │   ├── src/
@@ -328,7 +329,7 @@ image-editor-pro/
 │       │   └── index.ts               entry point (with shebang)
 │       ├── test/
 │       │   └── server.test.ts         spawn process, verify tool calls
-│       └── package.json               bin: image-editor-pro-mcp
+│       └── package.json               bin: image-studio-mcp
 │
 ├── docs/
 │   └── superpowers/
@@ -387,10 +388,10 @@ npm test -- --watch       # vitest re-runs affected tests on change
 
 ```bash
 npm run package
-# Produces image-editor-pro-0.1.0.vsix
+# Produces image-studio-0.1.0.vsix
 ```
 
-User installs via `code --install-extension image-editor-pro-0.1.0.vsix`, or via the VSCode UI (`Extensions panel → ... → Install from VSIX`).
+User installs via `code --install-extension image-studio-0.1.0.vsix`, or via the VSCode UI (`Extensions panel → ... → Install from VSIX`).
 
 Later: publish to OpenVSX and VSCode Marketplace.
 
