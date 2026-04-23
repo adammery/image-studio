@@ -275,20 +275,21 @@ function applyCompareMode(mode: 'off' | 'slider' | 'sxs'): void {
   document.querySelectorAll('#compare-pill button').forEach((b) => {
     (b as HTMLButtonElement).classList.toggle('active', (b as HTMLButtonElement).dataset['mode'] === mode);
   });
-  mainImage.style.display        = '';
+  // Use visibility so image-container keeps its dimensions from mainImage layout
+  mainImage.style.visibility     = 'visible';
   compareBeforeImg.style.display = 'none';
   compareAfterImg.style.display  = 'none';
   sliderHandle.style.display     = 'none';
   compareBeforeImg.style.clipPath = '';
   compareAfterImg.style.clipPath  = '';
 
-  if (mode === 'off') { mainImage.src = srcUri; return; }
+  if (mode === 'off') { return; }
 
   compareBeforeImg.src = srcUri;
   compareAfterImg.src  = lastPreviewUri || srcUri;
-  compareBeforeImg.style.display = 'block';
-  compareAfterImg.style.display  = 'block';
-  mainImage.style.display = 'none';
+  compareBeforeImg.style.display  = 'block';
+  compareAfterImg.style.display   = 'block';
+  mainImage.style.visibility      = 'hidden'; // hide but keep layout dimensions
 
   if (mode === 'slider') {
     sliderHandle.style.display = 'block';
