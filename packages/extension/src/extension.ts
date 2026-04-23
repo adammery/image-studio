@@ -36,6 +36,13 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     vscode.workspace.onDidChangeWorkspaceFolders(() => treeProvider.refresh()),
   );
+
+  // Refresh when our settings change
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeConfiguration((e) => {
+      if (e.affectsConfiguration('imageStudio.excludeFolders')) treeProvider.refresh();
+    }),
+  );
 }
 
 export function deactivate(): void {}

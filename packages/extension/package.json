@@ -52,7 +52,36 @@
         "view": "imageStudio.files",
         "contents": "No images in this workspace.\n[Open Folder](command:vscode.openFolder)\nSupported formats: PNG, JPG, WebP, AVIF"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Image Studio",
+      "properties": {
+        "imageStudio.defaultCompareMode": {
+          "type": "string",
+          "enum": ["off", "slider", "preview"],
+          "enumDescriptions": [
+            "Show only the original image (clean view)",
+            "Show before/after with a draggable reveal slider",
+            "Show only the compressed preview"
+          ],
+          "default": "off",
+          "description": "Default compare mode when opening a new image (user's last choice still overrides within a session)."
+        },
+        "imageStudio.defaultQuality": {
+          "type": "number",
+          "enum": [75, 85, 92],
+          "enumDescriptions": ["Low — max size savings", "Medium — balanced", "High — near lossless"],
+          "default": 85,
+          "description": "Default quality for lossy formats."
+        },
+        "imageStudio.excludeFolders": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": ["node_modules", ".git", "dist", "out", "build", ".next", ".vscode", ".idea"],
+          "description": "Folder names skipped when listing images in the Activity Bar sidebar."
+        }
+      }
+    }
   },
   "dependencies": {
     "@image-studio/core": "*",

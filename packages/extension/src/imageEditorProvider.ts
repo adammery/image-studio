@@ -119,7 +119,12 @@ export class ImageEditorProvider implements vscode.CustomEditorProvider<ImageDoc
       const meta = await getImageInfo(document.fsPath);
       const imageUri = panel.webview.asWebviewUri(vscode.Uri.file(document.fsPath)).toString();
       const editState = defaultEditState();
-      editState.compareMode = (this.context.globalState.get<string>('compareMode', 'off')) as EditState['compareMode'];
+      const config = vscode.workspace.getConfiguration('imageStudio');
+      const configCompareMode = config.get<string>('defaultCompareMode', 'off');
+      const configQuality     = config.get<number>('defaultQuality', 85);
+      // User's last choice in this session wins; fall back to config default.
+      editState.compareMode = (this.context.globalState.get<string>('compareMode', configCompareMode)) as EditState['compareMode'];
+      editState.quality     = configQuality;
       postToWebview(panel, { type: 'init', imageUri, meta, editState });
     } catch (err) {
       postToWebview(panel, { type: 'showError', message: (err as Error).message });

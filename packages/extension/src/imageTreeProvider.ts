@@ -2,7 +2,13 @@ import * as vscode from 'vscode';
 import * as path from 'node:path';
 
 const IMAGE_GLOB = '**/*.{png,jpg,jpeg,webp,avif,PNG,JPG,JPEG,WEBP,AVIF}';
-const EXCLUDE_GLOB = '**/{node_modules,.git,dist,out,build}/**';
+
+function buildExcludeGlob(): string {
+  const cfg = vscode.workspace.getConfiguration('imageStudio');
+  const folders = cfg.get<string[]>('excludeFolders', ['node_modules', '.git', 'dist', 'out', 'build']);
+  if (!folders.length) return '';
+  return `**/{${folders.join(',')}}/**`;
+}
 
 class ImageItem extends vscode.TreeItem {
   constructor(public readonly resourceUri: vscode.Uri) {
@@ -28,7 +34,7 @@ export class ImageTreeProvider implements vscode.TreeDataProvider<ImageItem> {
   async getChildren(element?: ImageItem): Promise<ImageItem[]> {
     if (element) return [];
     if (!vscode.workspace.workspaceFolders?.length) return [];
-    const files = await vscode.workspace.findFiles(IMAGE_GLOB, EXCLUDE_GLOB);
+    const files = await vscode.workspace.findFiles(IMAGE_GLOB, buildExcludeGlob());
     return files
       .sort((a, b) => a.fsPath.localeCompare(b.fsPath))
       .map((uri) => new ImageItem(uri));
