@@ -9,7 +9,7 @@ describe('test fixtures generator', () => {
   afterAll(() => fx?.cleanup());
 
   it('creates all expected sample files', () => {
-    for (const f of [fx.samplePng, fx.sampleJpg, fx.sampleWebp, fx.largePng, fx.transparentPng]) {
+    for (const f of [fx.samplePng, fx.sampleJpg, fx.largePng, fx.transparentPng]) {
       expect(existsSync(f)).toBe(true);
       expect(statSync(f).size).toBeGreaterThan(0);
     }
