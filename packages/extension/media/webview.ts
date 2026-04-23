@@ -558,7 +558,9 @@ window.addEventListener('message', (event) => {
       srcUri  = msg.imageUri as string;
       srcMeta = msg.meta as ImageInfo;
       srcPath = basename(decodeURIComponent(srcUri.split('?')[0]));
+      const prevCompareMode = editState.compareMode; // preserve user's compare preference
       editState = msg.editState as EditState;
+      editState.compareMode = prevCompareMode;
       errorBanner.classList.remove('visible');
       mainImage.src = srcUri;
       mainImage.onload = () => applyCompareMode(editState.compareMode);
