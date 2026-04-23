@@ -19,7 +19,7 @@ A VSCode extension that replaces the default read-only image preview with a full
 
 - **Replace** the stock read-only image preview with an editor supporting the operations below.
 - **Provide AI access** via MCP so image operations can be driven by natural language from any MCP client.
-- **Ship as extension initially** — preserves path to fork-and-bundle later if user's broader ambitions (UI cleanup, Laravel focus, perf tuning, Figma viewer) require core modifications. Extension code ports into a fork's `extensions/` folder unchanged.
+- **Stay focused on image editing.** No scope creep into other tools or broader IDE customization — one thing, done well.
 
 ---
 
@@ -426,13 +426,13 @@ Four phases. After each, the project is in a shippable state — no half-done in
 
 ## 13. Future Work (post-MVP)
 
+Scope stays strictly on image editing. Potential iterations, all within the same extension:
+
 - Rotate 90° / Flip horizontal / Flip vertical
 - GIF support (multi-frame animation)
 - Undo / Redo history stack
 - Split-view before/after comparison
 - CLI thin wrapper (`img-convert`) for terminal and scripting use
-- Figma-integrated viewer (separate initiative, covered as its own project)
-- Potential fork: if user's broader ambitions materialize (UI cleanup, Laravel focus, perf tuning, rebrand), extension code ports cleanly into a fork's `extensions/` folder. No rewrite required.
 
 ---
 
@@ -440,7 +440,7 @@ Four phases. After each, the project is in a shippable state — no half-done in
 
 None. All decision points resolved during brainstorming:
 
-- Fork vs extension → **extension** (preserves fork path later if needed)
+- Fork vs extension → **extension** (focused scope)
 - Architecture → **3-package monorepo, shared `core/`**
 - Save semantics → **modal confirmation when format changes**
 - AI interface → **MCP only for MVP, CLI later**
