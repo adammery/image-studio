@@ -335,7 +335,7 @@ document.addEventListener('mouseup', () => { sliderDragging = false; });
 // ── Zoom/pan ──────────────────────────────────────────────────────────────────
 let zoom = 0; // 0 = fit
 let panX = 0, panY = 0;
-let spaceDown = false, panning = false;
+let panning = false;
 let panStart = { x: 0, y: 0 };
 
 function applyTransform(): void {
@@ -352,8 +352,9 @@ function applyTransform(): void {
 function setZoom(z: number): void {
   zoom = z <= 0.11 ? 0 : Math.min(8, z);
   applyTransform();
+  updateCursor();
 }
-function setFit(): void { zoom = 0; panX = 0; panY = 0; applyTransform(); }
+function setFit(): void { zoom = 0; panX = 0; panY = 0; applyTransform(); updateCursor(); }
 
 zoomIn.addEventListener('click',  () => setZoom(zoom === 0 ? 1.1 : zoom * 1.1));
 zoomOut.addEventListener('click', () => setZoom(zoom === 0 ? 0.9 : zoom * 0.9));
@@ -363,16 +364,37 @@ compareBeforeImg.addEventListener('dblclick', setFit);
 
 canvasArea.addEventListener('wheel', (e) => {
   e.preventDefault();
-  setZoom((zoom === 0 ? 1 : zoom) * (e.deltaY > 0 ? 0.9 : 1.1));
+  if (e.ctrlKey || e.metaKey) {
+    // Pinch gesture on trackpad OR Ctrl+scroll on mouse → zoom
+    // Use small factor since trackpad pinch sends many events
+    const factor = e.deltaY > 0 ? 0.97 : 1.03;
+    setZoom((zoom === 0 ? 1 : zoom) * factor);
+  } else if (zoom !== 0) {
+    // Two-finger scroll on trackpad (or mouse scroll) when zoomed → pan
+    panX -= e.deltaX;
+    panY -= e.deltaY;
+    applyTransform();
+  } else {
+    // Scroll without Ctrl when fit → zoom gently
+    const factor = e.deltaY > 0 ? 0.92 : 1.08;
+    setZoom(factor);
+  }
 }, { passive: false });
 
-document.addEventListener('keydown', (e) => { if (e.code === 'Space' && !cropOverlay.classList.contains('active')) { spaceDown = true; canvasArea.style.cursor = 'grab'; } });
-document.addEventListener('keyup',   (e) => { if (e.code === 'Space') { spaceDown = false; panning = false; canvasArea.style.cursor = ''; } });
+// Drag on canvas when zoomed = pan (no Space needed)
 canvasArea.addEventListener('mousedown', (e) => {
-  if (spaceDown && zoom !== 0) { panning = true; panStart = { x: e.clientX - panX, y: e.clientY - panY }; canvasArea.style.cursor = 'grabbing'; e.preventDefault(); }
+  if (zoom !== 0 && !cropOverlay.classList.contains('active') && !sliderDragging) {
+    panning = true;
+    panStart = { x: e.clientX - panX, y: e.clientY - panY };
+    canvasArea.style.cursor = 'grabbing';
+    e.preventDefault();
+  }
 });
 document.addEventListener('mousemove', (e) => { if (!panning) return; panX = e.clientX - panStart.x; panY = e.clientY - panStart.y; applyTransform(); });
-document.addEventListener('mouseup', () => { if (panning) { panning = false; canvasArea.style.cursor = spaceDown ? 'grab' : ''; } });
+document.addEventListener('mouseup', () => { if (panning) { panning = false; canvasArea.style.cursor = zoom !== 0 ? 'grab' : ''; } });
+
+// Show grab cursor when zoomed in (hint that drag = pan)
+function updateCursor(): void { canvasArea.style.cursor = zoom !== 0 && !cropOverlay.classList.contains('active') ? 'grab' : ''; }
 
 // ── Crop ──────────────────────────────────────────────────────────────────────
 interface CropRect { x: number; y: number; w: number; h: number; }
@@ -593,8 +615,16 @@ window.addEventListener('message', (event) => {
       editState = msg.editState as EditState;
       editState.compareMode = prevCompareMode;
       errorBanner.classList.remove('visible');
+      // Set onload BEFORE src to avoid cache-load race condition
+      mainImage.onload = () => {
+        applyCompareMode(editState.compareMode);
+        // Refresh compare images so they show the new file, not the previous one
+        if (editState.compareMode !== 'off') {
+          compareBeforeImg.src = srcUri;
+          compareAfterImg.src  = lastPreviewUri || srcUri;
+        }
+      };
       mainImage.src = srcUri;
-      mainImage.onload = () => applyCompareMode(editState.compareMode);
       populateBefore(srcMeta, srcPath);
       afterFname.textContent = afterFilename(srcPath, editState, srcMeta.format);
       afterMeta.textContent  = fmtLabel(editState, srcMeta.format);
