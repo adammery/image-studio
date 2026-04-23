@@ -21,7 +21,47 @@ Requires Node 20 LTS.
 nvm use            # activate Node 20 from .nvmrc
 npm install        # installs all workspace packages
 npm test           # runs all package tests
+npm run build      # compiles dist/ for all packages
 ```
+
+## Using the MCP server with Claude Code (local development)
+
+After `npm run build`, add this block to your Claude Code `settings.json` (or `~/.claude/mcp_config.json` depending on your Claude Code version):
+
+```json
+{
+  "mcpServers": {
+    "image-studio": {
+      "command": "node",
+      "args": ["/absolute/path/to/image-studio/packages/mcp-server/dist/index.js"]
+    }
+  }
+}
+```
+
+Restart Claude Code. The following tools become available:
+
+- `get_image_info(src)` — read metadata without modifying the file
+- `convert_image({src, format, quality?, lossless?, dst?, overwrite?})` — single-file format conversion
+- `resize_image({src, width?, height?, fit?, dst?, overwrite?})` — resize by dimensions
+- `crop_image({src, x, y, width, height, dst?, overwrite?})` — extract rectangle
+- `batch_convert({files? | pattern?, format, quality?, outSuffix?, overwrite?})` — multi-file conversion
+
+### Example prompts
+
+- "Convert all PNGs in `/Users/me/icons/` to webp quality 80."
+- "What size is `/Users/me/photo.jpg`?"
+- "Resize `/Users/me/banner.png` to width 1200 keeping aspect ratio."
+- "Crop the top-left 500x500 pixels out of `/Users/me/screenshot.png`."
+
+### Security constraints
+
+The MCP server enforces the following at the AI boundary:
+
+- Absolute paths only (no relative paths, no `..` traversal)
+- Max 100 MB per file
+- Glob patterns must have a concrete base directory (`/Users/me/foo/**/*.png`, not `**/*.png`)
+- Overwrite protection: `dst` existence is checked; requires explicit `overwrite: true` to replace
 
 ## License
 
