@@ -134,12 +134,43 @@ body { height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
 #zoom-pct { padding: 3px 6px; min-width: 42px; text-align: center; font-variant-numeric: tabular-nums; }
 #zoom-fit { padding: 3px 10px; border-left: 1px solid #444; }
 
+/* ── Edit toggle button ───────────────────────────────────────── */
+#edit-toggle {
+  position: absolute; top: 12px; right: 14px;
+  background: rgba(45,45,45,.92); backdrop-filter: blur(10px);
+  border: 1px solid #444; border-radius: 100px;
+  color: #bdbdbd; padding: 4px 14px; font-size: 11px;
+  cursor: pointer; font-family: inherit; z-index: 10;
+  box-shadow: 0 2px 8px rgba(0,0,0,.4);
+}
+#edit-toggle.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* ── Side-by-side container ───────────────────────────────────── */
+#sxs-container {
+  display: none;
+  width: 100%; align-self: stretch;
+}
+#sxs-container.active { display: flex; }
+.sxs-half {
+  flex: 1; position: relative; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  border-right: 1px solid #333;
+}
+.sxs-half:last-child { border-right: none; }
+.sxs-half img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.sxs-label {
+  position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+  background: rgba(0,0,0,.65); color: #fff;
+  padding: 2px 10px; border-radius: 100px; font-size: 10px; white-space: nowrap;
+}
+
 /* ── Right panel ──────────────────────────────────────────────── */
 #panel {
   width: var(--panel-w); background: var(--bg2);
   border-left: 1px solid var(--border);
   display: flex; flex-direction: column; min-height: 0;
 }
+#panel.hidden { display: none; }
 #panel-sections { flex: 1; overflow-y: auto; }
 
 .panel-section { border-bottom: 1px solid var(--border); }

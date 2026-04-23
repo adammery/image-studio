@@ -7,7 +7,10 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.window.registerCustomEditorProvider(
       ImageEditorProvider.viewType,
       provider,
-      { supportsMultipleEditorsPerDocument: false },
+      {
+        supportsMultipleEditorsPerDocument: false,
+        webviewOptions: { retainContextWhenHidden: true },
+      },
     ),
   );
 }

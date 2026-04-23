@@ -119,7 +119,7 @@ export class ImageEditorProvider implements vscode.CustomEditorProvider<ImageDoc
       const meta = await getImageInfo(document.fsPath);
       const imageUri = panel.webview.asWebviewUri(vscode.Uri.file(document.fsPath)).toString();
       const editState = defaultEditState();
-      editState.compareMode = (this.context.globalState.get<string>('compareMode', 'slider')) as EditState['compareMode'];
+      editState.compareMode = (this.context.globalState.get<string>('compareMode', 'off')) as EditState['compareMode'];
       postToWebview(panel, { type: 'init', imageUri, meta, editState });
     } catch (err) {
       postToWebview(panel, { type: 'showError', message: (err as Error).message });

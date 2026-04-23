@@ -11,15 +11,26 @@ document.getElementById('root')!.innerHTML = /* html */ `
 <div id="main">
   <div id="canvas-area">
     <div id="compare-pill">
-      <button data-mode="off">Off</button>
-      <button data-mode="slider" class="active">Slider</button>
+      <button data-mode="off" class="active">Off</button>
+      <button data-mode="slider">Slider</button>
       <button data-mode="sxs">Side by side</button>
     </div>
+    <button id="edit-toggle">✏ Edit</button>
     <div id="image-container">
       <img id="main-image" alt="Image preview" draggable="false">
       <img id="compare-before" alt="original" draggable="false">
       <img id="compare-after"  alt="after"    draggable="false">
       <div id="slider-handle"><div id="slider-knob">⇆</div></div>
+    </div>
+    <div id="sxs-container">
+      <div class="sxs-half">
+        <img id="sxs-before" alt="Original" draggable="false">
+        <span class="sxs-label">Original</span>
+      </div>
+      <div class="sxs-half">
+        <img id="sxs-after" alt="After" draggable="false">
+        <span class="sxs-label" id="sxs-label-after">After</span>
+      </div>
     </div>
     <div id="crop-overlay">
       <div id="crop-selection">
@@ -163,8 +174,9 @@ const QUALITY_PRESETS = [92, 85, 75] as const;
 
 let editState: EditState = {
   format: 'same', quality: 85, lossless: false,
-  compareMode: 'slider', trashOriginal: false,
+  compareMode: 'off', trashOriginal: false,
 };
+let editMode = false;
 let srcMeta: ImageInfo | null = null;
 let srcPath = '';
 let srcUri  = '';
@@ -189,6 +201,12 @@ const zoomIn         = document.getElementById('zoom-in')         as HTMLButtonE
 const zoomOut        = document.getElementById('zoom-out')        as HTMLButtonElement;
 const zoomFit        = document.getElementById('zoom-fit')        as HTMLButtonElement;
 const canvasArea     = document.getElementById('canvas-area')     as HTMLElement;
+const sxsContainer   = document.getElementById('sxs-container')   as HTMLElement;
+const sxsBeforeImg   = document.getElementById('sxs-before')      as HTMLImageElement;
+const sxsAfterImg    = document.getElementById('sxs-after')       as HTMLImageElement;
+const sxsLabelAfter  = document.getElementById('sxs-label-after') as HTMLElement;
+const editToggleBtn  = document.getElementById('edit-toggle')     as HTMLButtonElement;
+const panel          = document.getElementById('panel')           as HTMLElement;
 const beforeFname    = document.getElementById('before-fname')    as HTMLElement;
 const beforeMeta     = document.getElementById('before-meta')     as HTMLElement;
 const beforeSize     = document.getElementById('before-size')     as HTMLElement;
@@ -283,30 +301,46 @@ function applyCompareMode(mode: 'off' | 'slider' | 'sxs'): void {
   document.querySelectorAll('#compare-pill button').forEach((b) => {
     (b as HTMLButtonElement).classList.toggle('active', (b as HTMLButtonElement).dataset['mode'] === mode);
   });
-  // Use visibility so image-container keeps its dimensions from mainImage layout
-  mainImage.style.visibility     = 'visible';
-  compareBeforeImg.style.display = 'none';
-  compareAfterImg.style.display  = 'none';
-  sliderHandle.style.display     = 'none';
+  // Reset all
+  mainImage.style.visibility      = 'visible';
+  compareBeforeImg.style.display  = 'none';
+  compareAfterImg.style.display   = 'none';
+  sliderHandle.style.display      = 'none';
   compareBeforeImg.style.clipPath = '';
   compareAfterImg.style.clipPath  = '';
+  sxsContainer.classList.remove('active');
+  imageContainer.style.display    = '';
 
   if (mode === 'off') { return; }
 
+  if (mode === 'sxs') {
+    // Dedicated side-by-side layout — reliable, no clip-path tricks
+    imageContainer.style.display = 'none';
+    sxsContainer.classList.add('active');
+    sxsBeforeImg.src = srcUri;
+    sxsAfterImg.src  = lastPreviewUri || srcUri;
+    return;
+  }
+
+  // Slider mode: overlaid images with clip-path
   compareBeforeImg.src = srcUri;
   compareAfterImg.src  = lastPreviewUri || srcUri;
-  compareBeforeImg.style.display  = 'block';
-  compareAfterImg.style.display   = 'block';
-  mainImage.style.visibility      = 'hidden'; // hide but keep layout dimensions
-
-  if (mode === 'slider') {
-    sliderHandle.style.display = 'block';
-    updateSliderClip();
-  } else {
-    compareBeforeImg.style.clipPath = `inset(0 50% 0 0)`;
-    compareAfterImg.style.clipPath  = `inset(0 0 0 50%)`;
-  }
+  compareBeforeImg.style.display = 'block';
+  compareAfterImg.style.display  = 'block';
+  mainImage.style.visibility     = 'hidden';
+  sliderHandle.style.display     = 'block';
+  updateSliderClip();
 }
+
+function setEditMode(active: boolean): void {
+  editMode = active;
+  panel.classList.toggle('hidden', !active);
+  comparePill.style.display = active ? '' : 'none';
+  editToggleBtn.classList.toggle('active', active);
+  editToggleBtn.textContent = active ? '✕ Close' : '✏ Edit';
+}
+
+editToggleBtn.addEventListener('click', () => setEditMode(!editMode));
 function updateSliderClip(): void {
   sliderHandle.style.left = `${sliderPos}%`;
   compareBeforeImg.style.clipPath = `inset(0 ${100 - sliderPos}% 0 0)`;
@@ -615,16 +649,14 @@ window.addEventListener('message', (event) => {
       editState = msg.editState as EditState;
       editState.compareMode = prevCompareMode;
       errorBanner.classList.remove('visible');
+      // Reset preview cache — old preview belongs to old file
+      lastPreviewUri = '';
       // Set onload BEFORE src to avoid cache-load race condition
       mainImage.onload = () => {
         applyCompareMode(editState.compareMode);
-        // Refresh compare images so they show the new file, not the previous one
-        if (editState.compareMode !== 'off') {
-          compareBeforeImg.src = srcUri;
-          compareAfterImg.src  = lastPreviewUri || srcUri;
-        }
       };
       mainImage.src = srcUri;
+      setEditMode(editMode); // sync UI to current edit mode
       populateBefore(srcMeta, srcPath);
       afterFname.textContent = afterFilename(srcPath, editState, srcMeta.format);
       afterMeta.textContent  = fmtLabel(editState, srcMeta.format);
@@ -641,9 +673,12 @@ window.addEventListener('message', (event) => {
       const { previewDataUrl, size, width, height } = msg as { previewDataUrl: string; size: number; width: number; height: number };
       populateAfter(size, width, height);
       lastPreviewUri = previewDataUrl;
-      if (editState.compareMode !== 'off') {
+      if (editState.compareMode === 'slider') {
         compareAfterImg.src = previewDataUrl;
-        if (editState.compareMode === 'sxs') { compareBeforeImg.style.clipPath = 'inset(0 50% 0 0)'; compareAfterImg.style.clipPath = 'inset(0 0 0 50%)'; }
+      } else if (editState.compareMode === 'sxs') {
+        sxsAfterImg.src = previewDataUrl;
+        // Update SxS after-label with format info
+        if (srcMeta) sxsLabelAfter.textContent = fmtLabel(editState, srcMeta.format);
       }
       break;
     }
