@@ -1,0 +1,44 @@
+{
+  "name": "@image-studio/extension",
+  "version": "0.1.0",
+  "private": true,
+  "description": "VSCode extension for Image Studio",
+  "main": "./dist/extension.js",
+  "scripts": {
+    "build": "node esbuild.config.mjs",
+    "dev": "node esbuild.config.mjs --watch",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "contributes": {
+    "customEditors": [
+      {
+        "viewType": "imageStudio.editor",
+        "displayName": "Image Studio",
+        "selector": [
+          { "filenamePattern": "*.png" },
+          { "filenamePattern": "*.jpg" },
+          { "filenamePattern": "*.jpeg" },
+          { "filenamePattern": "*.webp" },
+          { "filenamePattern": "*.avif" }
+        ],
+        "priority": "default"
+      }
+    ]
+  },
+  "dependencies": {
+    "@image-studio/core": "*",
+    "sharp": "^0.33.4",
+    "trash": "^8.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.12",
+    "@types/vscode": "^1.90.0",
+    "esbuild": "^0.21.0",
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0"
+  }
+}
