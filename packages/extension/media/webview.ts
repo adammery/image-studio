@@ -21,8 +21,8 @@ document.getElementById('root')!.innerHTML = /* html */ `
       <img id="main-image" alt="Image preview" draggable="false">
       <img id="compare-before" alt="original" draggable="false">
       <img id="compare-after"  alt="after"    draggable="false">
-      <div id="slider-handle"><div id="slider-knob">⇆</div></div>
     </div>
+    <div id="slider-handle"><div id="slider-knob">⇆</div></div>
     <div id="crop-overlay">
       <div id="crop-selection">
         <div class="crop-handle nw" data-dir="nw"></div>
@@ -282,7 +282,7 @@ function populateAfter(size: number, width: number, height: number): void {
 
 // ── Compare ───────────────────────────────────────────────────────────────────
 let lastPreviewUri = '';
-let sliderPos = 50;
+let sliderPos = 50; // percentage of canvas-area (viewport) width
 
 function applyCompareMode(mode: 'off' | 'slider' | 'preview'): void {
   document.querySelectorAll('#compare-pill button').forEach((b) => {
@@ -333,8 +333,21 @@ function setEditMode(active: boolean): void {
 
 editToggleBtn.addEventListener('click', () => setEditMode(!editMode));
 function updateSliderClip(): void {
+  // Handle position: sliderPos% of canvas-area (viewport), independent of zoom
   sliderHandle.style.left = `${sliderPos}%`;
-  compareBeforeImg.style.clipPath = `inset(0 ${100 - sliderPos}% 0 0)`;
+
+  // Translate viewport position to compare-before's local coordinate system.
+  // compare-before is inside image-container which may be transformed (zoom).
+  // Clip-path is applied in the ELEMENT's own coordinate space (pre-transform),
+  // so we compute what % of the image element corresponds to the viewport X.
+  const areaRect = canvasArea.getBoundingClientRect();
+  const imgRect  = mainImage.getBoundingClientRect();
+  const viewportX  = (sliderPos / 100) * areaRect.width;
+  const imgLeftInArea = imgRect.left - areaRect.left;
+  const imgPct = imgRect.width > 0
+    ? Math.max(0, Math.min(100, ((viewportX - imgLeftInArea) / imgRect.width) * 100))
+    : 50;
+  compareBeforeImg.style.clipPath = `inset(0 ${100 - imgPct}% 0 0)`;
   compareAfterImg.style.clipPath  = 'none';
 }
 
@@ -373,6 +386,8 @@ function applyTransform(): void {
     zoomPct.textContent = `${Math.round(zoom * 100)}%`;
     zoomPill.classList.add('visible');
   }
+  // Keep slider clip aligned with viewport regardless of zoom/pan
+  if (editState.compareMode === 'slider') updateSliderClip();
 }
 function setZoom(z: number): void {
   zoom = z <= 0.11 ? 0 : Math.min(8, z);
@@ -452,6 +467,10 @@ function renderCropSelection(): void {
   cropSelection.style.height = `${cropDraft.h * scale}px`;
 }
 function enterCropMode(): void {
+  // Crop positioning math uses the non-transformed image. Reset zoom so
+  // handles and coords align with what the user sees. (Pixel-perfect
+  // crop-while-zoomed would need a bigger refactor; deferred.)
+  if (zoom !== 0) setFit();
   cropDraft = editState.crop
     ? { x: editState.crop.x, y: editState.crop.y, w: editState.crop.width, h: editState.crop.height }
     : { x: 0, y: 0, w: srcMeta?.width ?? 100, h: srcMeta?.height ?? 100 };

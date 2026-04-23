@@ -16,8 +16,8 @@ document.getElementById("root").innerHTML = /* html */
       <img id="main-image" alt="Image preview" draggable="false">
       <img id="compare-before" alt="original" draggable="false">
       <img id="compare-after"  alt="after"    draggable="false">
-      <div id="slider-handle"><div id="slider-knob">\u21C6</div></div>
     </div>
+    <div id="slider-handle"><div id="slider-knob">\u21C6</div></div>
     <div id="crop-overlay">
       <div id="crop-selection">
         <div class="crop-handle nw" data-dir="nw"></div>
@@ -302,7 +302,12 @@ function setEditMode(active) {
 editToggleBtn.addEventListener("click", () => setEditMode(!editMode));
 function updateSliderClip() {
   sliderHandle.style.left = `${sliderPos}%`;
-  compareBeforeImg.style.clipPath = `inset(0 ${100 - sliderPos}% 0 0)`;
+  const areaRect = canvasArea.getBoundingClientRect();
+  const imgRect = mainImage.getBoundingClientRect();
+  const viewportX = sliderPos / 100 * areaRect.width;
+  const imgLeftInArea = imgRect.left - areaRect.left;
+  const imgPct = imgRect.width > 0 ? Math.max(0, Math.min(100, (viewportX - imgLeftInArea) / imgRect.width * 100)) : 50;
+  compareBeforeImg.style.clipPath = `inset(0 ${100 - imgPct}% 0 0)`;
   compareAfterImg.style.clipPath = "none";
 }
 document.querySelectorAll("#compare-pill button").forEach((b) => {
@@ -342,6 +347,7 @@ function applyTransform() {
     zoomPct.textContent = `${Math.round(zoom * 100)}%`;
     zoomPill.classList.add("visible");
   }
+  if (editState.compareMode === "slider") updateSliderClip();
 }
 function setZoom(z) {
   zoom = z <= 0.11 ? 0 : Math.min(8, z);
@@ -425,6 +431,7 @@ function renderCropSelection() {
   cropSelection.style.height = `${cropDraft.h * scale}px`;
 }
 function enterCropMode() {
+  if (zoom !== 0) setFit();
   cropDraft = editState.crop ? { x: editState.crop.x, y: editState.crop.y, w: editState.crop.width, h: editState.crop.height } : { x: 0, y: 0, w: srcMeta?.width ?? 100, h: srcMeta?.height ?? 100 };
   cropOverlay.classList.add("active");
   cropActions.classList.add("visible");
