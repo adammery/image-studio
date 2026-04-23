@@ -11,9 +11,9 @@ document.getElementById('root')!.innerHTML = /* html */ `
 <div id="main">
   <div id="canvas-area">
     <div id="compare-pill">
-      <button data-mode="off" class="active">Off</button>
+      <button data-mode="off" class="active">Original</button>
       <button data-mode="slider">Slider</button>
-      <button data-mode="sxs">Side by side</button>
+      <button data-mode="preview">Preview</button>
     </div>
     <button id="edit-toggle">✏ Edit</button>
     <div id="image-container">
@@ -21,16 +21,6 @@ document.getElementById('root')!.innerHTML = /* html */ `
       <img id="compare-before" alt="original" draggable="false">
       <img id="compare-after"  alt="after"    draggable="false">
       <div id="slider-handle"><div id="slider-knob">⇆</div></div>
-    </div>
-    <div id="sxs-container">
-      <div class="sxs-half">
-        <img id="sxs-before" alt="Original" draggable="false">
-        <span class="sxs-label">Original</span>
-      </div>
-      <div class="sxs-half">
-        <img id="sxs-after" alt="After" draggable="false">
-        <span class="sxs-label" id="sxs-label-after">After</span>
-      </div>
     </div>
     <div id="crop-overlay">
       <div id="crop-selection">
@@ -161,7 +151,7 @@ interface EditState {
   format:   'same' | 'png' | 'jpeg' | 'webp' | 'avif';
   quality:  number;
   lossless: boolean;
-  compareMode:   'off' | 'slider' | 'sxs';
+  compareMode:   'off' | 'slider' | 'preview';
   trashOriginal: boolean;
 }
 interface ImageInfo {
@@ -201,10 +191,6 @@ const zoomIn         = document.getElementById('zoom-in')         as HTMLButtonE
 const zoomOut        = document.getElementById('zoom-out')        as HTMLButtonElement;
 const zoomFit        = document.getElementById('zoom-fit')        as HTMLButtonElement;
 const canvasArea     = document.getElementById('canvas-area')     as HTMLElement;
-const sxsContainer   = document.getElementById('sxs-container')   as HTMLElement;
-const sxsBeforeImg   = document.getElementById('sxs-before')      as HTMLImageElement;
-const sxsAfterImg    = document.getElementById('sxs-after')       as HTMLImageElement;
-const sxsLabelAfter  = document.getElementById('sxs-label-after') as HTMLElement;
 const editToggleBtn  = document.getElementById('edit-toggle')     as HTMLButtonElement;
 const panel          = document.getElementById('panel')           as HTMLElement;
 const beforeFname    = document.getElementById('before-fname')    as HTMLElement;
@@ -297,7 +283,7 @@ function populateAfter(size: number, width: number, height: number): void {
 let lastPreviewUri = '';
 let sliderPos = 50;
 
-function applyCompareMode(mode: 'off' | 'slider' | 'sxs'): void {
+function applyCompareMode(mode: 'off' | 'slider' | 'preview'): void {
   document.querySelectorAll('#compare-pill button').forEach((b) => {
     (b as HTMLButtonElement).classList.toggle('active', (b as HTMLButtonElement).dataset['mode'] === mode);
   });
@@ -308,17 +294,16 @@ function applyCompareMode(mode: 'off' | 'slider' | 'sxs'): void {
   sliderHandle.style.display      = 'none';
   compareBeforeImg.style.clipPath = '';
   compareAfterImg.style.clipPath  = '';
-  sxsContainer.classList.remove('active');
-  imageContainer.style.display    = '';
 
-  if (mode === 'off') { return; }
+  if (mode === 'off') {
+    // Just the original (main image)
+    mainImage.src = srcUri;
+    return;
+  }
 
-  if (mode === 'sxs') {
-    // Dedicated side-by-side layout — reliable, no clip-path tricks
-    imageContainer.style.display = 'none';
-    sxsContainer.classList.add('active');
-    sxsBeforeImg.src = srcUri;
-    sxsAfterImg.src  = lastPreviewUri || srcUri;
+  if (mode === 'preview') {
+    // Show ONLY the compressed preview (or original if no preview yet)
+    mainImage.src = lastPreviewUri || srcUri;
     return;
   }
 
@@ -338,6 +323,11 @@ function setEditMode(active: boolean): void {
   comparePill.style.display = active ? '' : 'none';
   editToggleBtn.classList.toggle('active', active);
   editToggleBtn.textContent = active ? '✕ Close' : '✏ Edit';
+  // Hide the After column + arrow in clean view — only show file info
+  const afterCol = document.getElementById('info-after') as HTMLElement;
+  const arrow    = document.querySelector('#info-panel .info-arrow') as HTMLElement;
+  if (afterCol) afterCol.style.display = active ? '' : 'none';
+  if (arrow)    arrow.style.display    = active ? '' : 'none';
 }
 
 editToggleBtn.addEventListener('click', () => setEditMode(!editMode));
@@ -675,10 +665,8 @@ window.addEventListener('message', (event) => {
       lastPreviewUri = previewDataUrl;
       if (editState.compareMode === 'slider') {
         compareAfterImg.src = previewDataUrl;
-      } else if (editState.compareMode === 'sxs') {
-        sxsAfterImg.src = previewDataUrl;
-        // Update SxS after-label with format info
-        if (srcMeta) sxsLabelAfter.textContent = fmtLabel(editState, srcMeta.format);
+      } else if (editState.compareMode === 'preview') {
+        mainImage.src = previewDataUrl;
       }
       break;
     }

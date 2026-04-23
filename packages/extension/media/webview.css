@@ -145,25 +145,6 @@ body { height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
 }
 #edit-toggle.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 
-/* ── Side-by-side container ───────────────────────────────────── */
-#sxs-container {
-  display: none;
-  width: 100%; align-self: stretch;
-}
-#sxs-container.active { display: flex; }
-.sxs-half {
-  flex: 1; position: relative; overflow: hidden;
-  display: flex; align-items: center; justify-content: center;
-  border-right: 1px solid #333;
-}
-.sxs-half:last-child { border-right: none; }
-.sxs-half img { max-width: 100%; max-height: 100%; object-fit: contain; }
-.sxs-label {
-  position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
-  background: rgba(0,0,0,.65); color: #fff;
-  padding: 2px 10px; border-radius: 100px; font-size: 10px; white-space: nowrap;
-}
-
 /* ── Right panel ──────────────────────────────────────────────── */
 #panel {
   width: var(--panel-w); background: var(--bg2);

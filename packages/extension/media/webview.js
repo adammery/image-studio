@@ -6,9 +6,9 @@ document.getElementById("root").innerHTML = /* html */
 <div id="main">
   <div id="canvas-area">
     <div id="compare-pill">
-      <button data-mode="off" class="active">Off</button>
+      <button data-mode="off" class="active">Original</button>
       <button data-mode="slider">Slider</button>
-      <button data-mode="sxs">Side by side</button>
+      <button data-mode="preview">Preview</button>
     </div>
     <button id="edit-toggle">\u270F Edit</button>
     <div id="image-container">
@@ -16,16 +16,6 @@ document.getElementById("root").innerHTML = /* html */
       <img id="compare-before" alt="original" draggable="false">
       <img id="compare-after"  alt="after"    draggable="false">
       <div id="slider-handle"><div id="slider-knob">\u21C6</div></div>
-    </div>
-    <div id="sxs-container">
-      <div class="sxs-half">
-        <img id="sxs-before" alt="Original" draggable="false">
-        <span class="sxs-label">Original</span>
-      </div>
-      <div class="sxs-half">
-        <img id="sxs-after" alt="After" draggable="false">
-        <span class="sxs-label" id="sxs-label-after">After</span>
-      </div>
     </div>
     <div id="crop-overlay">
       <div id="crop-selection">
@@ -179,10 +169,6 @@ var zoomIn = document.getElementById("zoom-in");
 var zoomOut = document.getElementById("zoom-out");
 var zoomFit = document.getElementById("zoom-fit");
 var canvasArea = document.getElementById("canvas-area");
-var sxsContainer = document.getElementById("sxs-container");
-var sxsBeforeImg = document.getElementById("sxs-before");
-var sxsAfterImg = document.getElementById("sxs-after");
-var sxsLabelAfter = document.getElementById("sxs-label-after");
 var editToggleBtn = document.getElementById("edit-toggle");
 var panel = document.getElementById("panel");
 var beforeFname = document.getElementById("before-fname");
@@ -285,16 +271,12 @@ function applyCompareMode(mode) {
   sliderHandle.style.display = "none";
   compareBeforeImg.style.clipPath = "";
   compareAfterImg.style.clipPath = "";
-  sxsContainer.classList.remove("active");
-  imageContainer.style.display = "";
   if (mode === "off") {
+    mainImage.src = srcUri;
     return;
   }
-  if (mode === "sxs") {
-    imageContainer.style.display = "none";
-    sxsContainer.classList.add("active");
-    sxsBeforeImg.src = srcUri;
-    sxsAfterImg.src = lastPreviewUri || srcUri;
+  if (mode === "preview") {
+    mainImage.src = lastPreviewUri || srcUri;
     return;
   }
   compareBeforeImg.src = srcUri;
@@ -311,6 +293,10 @@ function setEditMode(active) {
   comparePill.style.display = active ? "" : "none";
   editToggleBtn.classList.toggle("active", active);
   editToggleBtn.textContent = active ? "\u2715 Close" : "\u270F Edit";
+  const afterCol = document.getElementById("info-after");
+  const arrow = document.querySelector("#info-panel .info-arrow");
+  if (afterCol) afterCol.style.display = active ? "" : "none";
+  if (arrow) arrow.style.display = active ? "" : "none";
 }
 editToggleBtn.addEventListener("click", () => setEditMode(!editMode));
 function updateSliderClip() {
@@ -669,9 +655,8 @@ window.addEventListener("message", (event) => {
       lastPreviewUri = previewDataUrl;
       if (editState.compareMode === "slider") {
         compareAfterImg.src = previewDataUrl;
-      } else if (editState.compareMode === "sxs") {
-        sxsAfterImg.src = previewDataUrl;
-        if (srcMeta) sxsLabelAfter.textContent = fmtLabel(editState, srcMeta.format);
+      } else if (editState.compareMode === "preview") {
+        mainImage.src = previewDataUrl;
       }
       break;
     }
