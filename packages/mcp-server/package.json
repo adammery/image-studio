@@ -1,0 +1,26 @@
+{
+  "name": "image-studio-mcp",
+  "version": "0.1.0",
+  "description": "MCP server exposing Image Studio operations to AI clients",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "bin": {
+    "image-studio-mcp": "dist/index.js"
+  },
+  "files": ["dist/"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@image-studio/core": "*",
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.12"
+  }
+}
