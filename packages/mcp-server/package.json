@@ -3,7 +3,10 @@
   "version": "0.1.0",
   "description": "MCP server exposing Image Studio operations (crop, resize, convert, batch) to AI clients via sharp",
   "license": "MIT",
-  "repository": { "type": "git", "url": "https://github.com/adammery/image-studio" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/adammery/image-studio.git"
+  },
   "homepage": "https://github.com/adammery/image-studio#readme",
   "keywords": [
     "mcp",
@@ -22,7 +25,11 @@
   "bin": {
     "image-studio-mcp": "dist/index.js"
   },
-  "files": ["dist/", "README.md", "LICENSE"],
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "node esbuild.config.mjs",
     "dev": "node esbuild.config.mjs --watch",
