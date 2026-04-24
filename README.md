@@ -7,22 +7,27 @@ Image editor + AI converter for VSCode. **Two ways to use one tool**, install wh
 
 Both run locally through [sharp](https://sharp.pixelplumbing.com/). No uploads, no cloud, no telemetry.
 
+![Image Studio editor](docs/screenshots/editor.webp)
+
 ---
 
-## Install & use the AI side (MCP)
+## Use with Claude, Cursor, or Claude Desktop (MCP)
 
-**One command** — no cloning, no building:
+**Two commands** — no cloning, no building:
 
 ```bash
-claude mcp add --transport stdio --scope user image-studio -- npx -y image-studio-mcp
+npm install -g image-studio-mcp
+claude mcp add --transport stdio --scope user image-studio -- image-studio-mcp
 ```
 
-`npx -y` downloads [`image-studio-mcp`](https://www.npmjs.com/package/image-studio-mcp) from npm on first run and caches it. Restart your Claude Code session, then verify:
+The first command downloads [`image-studio-mcp`](https://www.npmjs.com/package/image-studio-mcp) from npm and compiles the native `sharp` binary for your platform. The second registers it with Claude Code. Restart your Claude Code session, then verify:
 
 ```bash
 claude mcp list
-# → image-studio: npx -y image-studio-mcp - ✓ Connected
+# → image-studio: ✓ Connected
 ```
+
+> **Why not `npx -y`?** It technically works, but the first-run cold start downloads sharp's native binary inside Claude Code's MCP handshake window and usually times out with `✗ Failed to connect`. Installing globally once avoids that.
 
 **That's it.** Now ask Claude anything like:
 
@@ -31,18 +36,27 @@ claude mcp list
 - *"Resize /Users/me/banner.png to width 1200 keeping aspect ratio."*
 - *"Crop the top-left 500×500 out of /Users/me/screenshot.png."*
 
-Five tools exposed: `get_image_info`, `convert_image`, `resize_image`, `crop_image`, `batch_convert`. Full tool reference on the [npm page](https://www.npmjs.com/package/image-studio-mcp).
+Five tools exposed:
+
+| Tool | What it does |
+|---|---|
+| `get_image_info` | Return width, height, format, and byte size of an image. |
+| `convert_image` | Convert a single image between PNG / JPG / WebP / AVIF with optional quality. |
+| `resize_image` | Resize by width, height, or both (aspect ratio preserved by default). |
+| `crop_image` | Crop a rectangular region by pixel coordinates. |
+| `batch_convert` | Apply a convert/resize pipeline to every file matching a glob. |
+
+Full argument reference on the [npm page](https://www.npmjs.com/package/image-studio-mcp).
 
 ### Cursor / Claude Desktop
 
-Add to your MCP config (`~/.cursor/mcp.json` or `claude_desktop_config.json`):
+After `npm install -g image-studio-mcp`, add to your MCP config (`~/.cursor/mcp.json` or `claude_desktop_config.json`):
 
 ```json
 {
   "mcpServers": {
     "image-studio": {
-      "command": "npx",
-      "args": ["-y", "image-studio-mcp"]
+      "command": "image-studio-mcp"
     }
   }
 }
@@ -59,7 +73,7 @@ Enforced at every tool call:
 
 ---
 
-## Install & use the GUI side (VSCode extension)
+## Use as a VSCode extension (GUI)
 
 1. **Download** `image-studio-<your-platform>.vsix` from the [GitHub Releases](https://github.com/adammery/image-studio/releases) page.
 2. **Install**:
@@ -75,18 +89,15 @@ Enforced at every tool call:
 
 Full feature list, keyboard shortcuts, and settings: [`packages/extension/README.md`](packages/extension/README.md).
 
-> **Note on platforms.** The `.vsix` bundles sharp's native libvips binary, so each `.vsix` is OS- and CPU-specific. Currently only `darwin-arm64` (Apple Silicon Mac) is published. Linux / Windows / Intel Mac builds coming.
+> **Note on platforms.** The `.vsix` bundles sharp's native libvips binary, so each `.vsix` is OS- and CPU-specific. Currently only `darwin-arm64` (Apple Silicon Mac) is published. Need Linux / Windows / Intel Mac? [Open an issue](https://github.com/adammery/image-studio/issues) and I'll prioritize.
 
 ---
 
 ## Status
 
-**MVP complete.** 69 tests pass (45 core + 21 mcp-server + 3 extension).
+Stable, MVP feature-complete. 69 tests passing across core, MCP server, and extension.
 
-- **Plan 1 shipped** — `@image-studio/core` + `image-studio-mcp` (5 MCP tools).
-- **Plan 2 shipped** — `@image-studio/extension` (custom editor, sidebar, `.vsix` packaging).
-
-## Repository layout (monorepo)
+## Repository layout
 
 - `packages/core/` — sharp-based image operations (pure library, no VSCode/MCP deps)
 - `packages/mcp-server/` — MCP server → published on npm as [`image-studio-mcp`](https://www.npmjs.com/package/image-studio-mcp)
