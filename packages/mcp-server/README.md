@@ -6,19 +6,20 @@ Part of [Image Studio](https://github.com/adammery/image-studio) — a VSCode im
 
 ## Install
 
-No manual install needed. Register with your MCP client and `npx -y` will download the package on first run.
+Install globally from npm, then register with your MCP client.
 
 ### Claude Code
 
 ```bash
-claude mcp add --transport stdio --scope user image-studio -- npx -y image-studio-mcp
+npm install -g image-studio-mcp
+claude mcp add --transport stdio --scope user image-studio -- image-studio-mcp
 ```
 
 Restart Claude Code and verify:
 
 ```bash
 claude mcp list
-# → image-studio: npx -y image-studio-mcp - ✓ Connected
+# → image-studio: image-studio-mcp - ✓ Connected
 ```
 
 **Now ask Claude anything like:**
@@ -29,18 +30,19 @@ claude mcp list
 
 ### Cursor / Claude Desktop
 
-Add to your MCP config (usually `~/.cursor/mcp.json` or `claude_desktop_config.json`):
+After `npm install -g image-studio-mcp`, add to your MCP config (usually `~/.cursor/mcp.json` or `claude_desktop_config.json`):
 
 ```json
 {
   "mcpServers": {
     "image-studio": {
-      "command": "npx",
-      "args": ["-y", "image-studio-mcp"]
+      "command": "image-studio-mcp"
     }
   }
 }
 ```
+
+> **Why not `npx -y image-studio-mcp`?** It works, but the first-run cold start downloads sharp's native binary inside the MCP handshake window and usually times out with `✗ Failed to connect`. A one-time global install avoids that.
 
 ## Tools
 
