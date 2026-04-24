@@ -65,3 +65,15 @@ Lossless encoding is available for WebP and AVIF — note that **quality 100 is 
 ## Privacy
 
 Nothing leaves your machine. All encoding runs locally through `sharp`'s native libvips binary bundled in the extension.
+
+## AI counterpart — `image-studio-mcp`
+
+Image Studio ships with a companion **MCP server** so Claude Code, Cursor, or Claude Desktop can convert images on your disk via natural language (*"convert all PNGs in /icons to webp quality 80"*). It's independent from this extension — install it separately with one command:
+
+```bash
+claude mcp add --transport stdio --scope user image-studio -- npx -y image-studio-mcp
+```
+
+Five tools: `get_image_info`, `convert_image`, `resize_image`, `crop_image`, `batch_convert`. Same `sharp`-based engine, same privacy model (everything local, no uploads).
+
+Full docs: [`image-studio-mcp` on npm](https://www.npmjs.com/package/image-studio-mcp).
