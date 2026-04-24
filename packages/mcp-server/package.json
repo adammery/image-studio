@@ -1,26 +1,44 @@
 {
   "name": "image-studio-mcp",
   "version": "0.1.0",
-  "description": "MCP server exposing Image Studio operations to AI clients",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "description": "MCP server exposing Image Studio operations (crop, resize, convert, batch) to AI clients via sharp",
+  "license": "MIT",
+  "repository": { "type": "git", "url": "https://github.com/adammery/image-studio" },
+  "homepage": "https://github.com/adammery/image-studio#readme",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "image",
+    "sharp",
+    "png",
+    "webp",
+    "avif",
+    "jpeg",
+    "crop",
+    "resize",
+    "convert"
+  ],
   "type": "module",
   "bin": {
     "image-studio-mcp": "dist/index.js"
   },
-  "files": ["dist/"],
+  "files": ["dist/", "README.md"],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "dev": "tsc -p tsconfig.json --watch",
+    "build": "node esbuild.config.mjs",
+    "dev": "node esbuild.config.mjs --watch",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "@image-studio/core": "*",
-    "@modelcontextprotocol/sdk": "^1.0.0"
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "fast-glob": "^3.3.2",
+    "sharp": "^0.33.4",
+    "trash": "^10.1.1"
   },
   "devDependencies": {
-    "@types/node": "^20.12.12"
+    "@types/node": "^20.12.12",
+    "esbuild": "^0.27.7"
   }
 }
