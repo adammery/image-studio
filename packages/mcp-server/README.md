@@ -6,7 +6,7 @@ Part of [Image Studio](https://github.com/adammery/image-studio) — a VSCode im
 
 ## Install
 
-No manual install needed. Register with your MCP client:
+No manual install needed. Register with your MCP client and `npx -y` will download the package on first run.
 
 ### Claude Code
 
@@ -14,12 +14,18 @@ No manual install needed. Register with your MCP client:
 claude mcp add --transport stdio --scope user image-studio -- npx -y image-studio-mcp
 ```
 
-`npx -y` downloads the package on first run. Restart Claude Code and verify:
+Restart Claude Code and verify:
 
 ```bash
 claude mcp list
 # → image-studio: npx -y image-studio-mcp - ✓ Connected
 ```
+
+**Now ask Claude anything like:**
+
+- *"Convert all PNGs in /Users/me/icons/ to webp quality 80."*
+- *"What's the size of /Users/me/photo.jpg?"*
+- *"Resize /Users/me/banner.png to width 1200 keeping aspect ratio."*
 
 ### Cursor / Claude Desktop
 

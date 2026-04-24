@@ -1,21 +1,96 @@
 # Image Studio
 
-Image editor and AI converter for VSCode.
+Image editor + AI converter for VSCode. **Two ways to use one tool**, install whichever (or both):
+
+- **AI (MCP server)** — Claude Code / Cursor / Claude Desktop converts images on your disk via natural language: *"convert all PNGs in /icons to webp quality 80"*.
+- **GUI (VSCode extension)** — custom image editor tab with live Before/After preview, crop, resize, compress.
+
+Both run locally through [sharp](https://sharp.pixelplumbing.com/). No uploads, no cloud, no telemetry.
+
+---
+
+## Install & use the AI side (MCP)
+
+**One command** — no cloning, no building:
+
+```bash
+claude mcp add --transport stdio --scope user image-studio -- npx -y image-studio-mcp
+```
+
+`npx -y` downloads [`image-studio-mcp`](https://www.npmjs.com/package/image-studio-mcp) from npm on first run and caches it. Restart your Claude Code session, then verify:
+
+```bash
+claude mcp list
+# → image-studio: npx -y image-studio-mcp - ✓ Connected
+```
+
+**That's it.** Now ask Claude anything like:
+
+- *"Convert all PNGs in /Users/me/icons/ to webp quality 80."*
+- *"What's the size of /Users/me/photo.jpg?"*
+- *"Resize /Users/me/banner.png to width 1200 keeping aspect ratio."*
+- *"Crop the top-left 500×500 out of /Users/me/screenshot.png."*
+
+Five tools exposed: `get_image_info`, `convert_image`, `resize_image`, `crop_image`, `batch_convert`. Full tool reference on the [npm page](https://www.npmjs.com/package/image-studio-mcp).
+
+### Cursor / Claude Desktop
+
+Add to your MCP config (`~/.cursor/mcp.json` or `claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "image-studio": {
+      "command": "npx",
+      "args": ["-y", "image-studio-mcp"]
+    }
+  }
+}
+```
+
+### AI security constraints
+
+Enforced at every tool call:
+
+- **Absolute paths only** — no `..` traversal.
+- **Max 100 MB per file.**
+- **Globs need a concrete base directory** (`/Users/me/foo/**/*.png`, not bare `**/*.png`).
+- **Overwrite protection** — `dst` existence check, requires explicit `overwrite: true` to replace.
+
+---
+
+## Install & use the GUI side (VSCode extension)
+
+1. **Download** `image-studio-<your-platform>.vsix` from the [GitHub Releases](https://github.com/adammery/image-studio/releases) page.
+2. **Install**:
+   ```bash
+   code --install-extension image-studio-<platform>.vsix
+   ```
+   (or drag the `.vsix` into a VSCode window)
+3. **Use**:
+   - Click the **Image Studio** icon in the Activity Bar (or press `Cmd+Shift+\` on Mac / `Ctrl+Shift+\` elsewhere).
+   - Pick any PNG / JPG / WebP / AVIF from the sidebar tree.
+   - Crop / Resize / Compress in the right panel. Watch the live Before/After size reduction badge.
+   - Press **Save** (or tick "Replace old image" to trash the original on save).
+
+Full feature list, keyboard shortcuts, and settings: [`packages/extension/README.md`](packages/extension/README.md).
+
+> **Note on platforms.** The `.vsix` bundles sharp's native libvips binary, so each `.vsix` is OS- and CPU-specific. Currently only `darwin-arm64` (Apple Silicon Mac) is published. Linux / Windows / Intel Mac builds coming.
+
+---
 
 ## Status
 
-**MVP complete.** Both planned phases shipped:
+**MVP complete.** 69 tests pass (45 core + 21 mcp-server + 3 extension).
 
-- **Plan 1:** `@image-studio/core` + `image-studio-mcp` (5 MCP tools for AI-driven conversion).
-- **Plan 2:** `@image-studio/extension` — VSCode extension with custom image editor, Activity Bar sidebar, compare/zoom/crop/resize/compress, and `.vsix` packaging.
+- **Plan 1 shipped** — `@image-studio/core` + `image-studio-mcp` (5 MCP tools).
+- **Plan 2 shipped** — `@image-studio/extension` (custom editor, sidebar, `.vsix` packaging).
 
-69 tests passing (45 core + 21 mcp-server + 3 extension).
-
-## Packages
+## Repository layout (monorepo)
 
 - `packages/core/` — sharp-based image operations (pure library, no VSCode/MCP deps)
-- `packages/mcp-server/` — MCP server exposing operations for AI clients
-- `packages/extension/` — VSCode extension (webview GUI + `.vsix` packager)
+- `packages/mcp-server/` — MCP server → published on npm as [`image-studio-mcp`](https://www.npmjs.com/package/image-studio-mcp)
+- `packages/extension/` — VSCode extension → packaged as `.vsix`
 
 ## Development
 
@@ -24,64 +99,31 @@ Requires Node 20 LTS.
 ```bash
 nvm use            # activate Node 20 from .nvmrc
 npm install        # installs all workspace packages
-npm test           # runs all package tests
+npm test           # runs all package tests (69 expected)
 npm run build      # compiles dist/ for all packages
 ```
 
-## Using the VSCode extension
+### Running the MCP server from a local clone
+
+Skips the npm registry — useful while hacking on the server:
 
 ```bash
-cd packages/extension
-./scripts/package.sh                                  # builds image-studio.vsix
-code --install-extension image-studio.vsix
-```
-
-The `.vsix` is platform-specific (ships sharp's native libvips binary). For macOS Apple Silicon out of the box; other platforms need a re-package on that OS.
-
-After install:
-- Click the Image Studio icon in the Activity Bar (or `Cmd+Shift+\` / `Ctrl+Shift+\`).
-- Open any PNG / JPG / WebP / AVIF from the tree or file explorer.
-- See `packages/extension/README.md` for full feature list and keyboard shortcuts.
-
-## Using the MCP server with Claude Code (local development)
-
-After `npm run build`, register the server with Claude Code's CLI:
-
-```bash
-claude mcp add --transport stdio --scope user image-studio \
+npm run build
+claude mcp add --transport stdio --scope user image-studio-dev \
   -- node /absolute/path/to/image-studio/packages/mcp-server/dist/index.js
 ```
 
-This writes to `~/.claude.json` (Claude Code's MCP config — distinct from `~/.claude/settings.json`). Verify with:
+Uses a different name (`image-studio-dev`) so it coexists with the published `image-studio` registration.
+
+### Building a `.vsix` for the extension
 
 ```bash
-claude mcp list                  # should show image-studio with ✓ Connected
-claude mcp get image-studio      # details
+cd packages/extension
+./scripts/package.sh
+code --install-extension image-studio.vsix
 ```
 
-Restart your active Claude Code session so it picks up the new server. The following tools then become available:
-
-- `get_image_info(src)` — read metadata without modifying the file
-- `convert_image({src, format, quality?, lossless?, dst?, overwrite?})` — single-file format conversion
-- `resize_image({src, width?, height?, fit?, dst?, overwrite?})` — resize by dimensions
-- `crop_image({src, x, y, width, height, dst?, overwrite?})` — extract rectangle
-- `batch_convert({files? | pattern?, format, quality?, outSuffix?, overwrite?})` — multi-file conversion
-
-### Example prompts
-
-- "Convert all PNGs in `/Users/me/icons/` to webp quality 80."
-- "What size is `/Users/me/photo.jpg`?"
-- "Resize `/Users/me/banner.png` to width 1200 keeping aspect ratio."
-- "Crop the top-left 500x500 pixels out of `/Users/me/screenshot.png`."
-
-### Security constraints
-
-The MCP server enforces the following at the AI boundary:
-
-- Absolute paths only (no relative paths, no `..` traversal)
-- Max 100 MB per file
-- Glob patterns must have a concrete base directory (`/Users/me/foo/**/*.png`, not `**/*.png`)
-- Overwrite protection: `dst` existence is checked; requires explicit `overwrite: true` to replace
+The script produces `image-studio.vsix` in `packages/extension/`. It bundles sharp for the host platform only.
 
 ## License
 
