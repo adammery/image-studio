@@ -2,6 +2,8 @@
 
 A VSCode image editor with **live Before/After preview**. Open PNG, JPG, WebP, or AVIF files directly in your editor and crop, resize, or compress without leaving VSCode.
 
+![Image Studio editor](https://raw.githubusercontent.com/adammery/image-studio/main/docs/screenshots/editor.webp)
+
 ## What it does
 
 - **Opens image files as a custom editor** — PNG / JPG / WebP / AVIF. Right-click any supported file → it opens in Image Studio instead of the generic viewer.
