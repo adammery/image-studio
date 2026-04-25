@@ -97,3 +97,24 @@ Run before each merge. Launch via **fn+F5** (or **Run → Start Debugging**) wit
 ## AVIF
 - [ ] Open AVIF file → displays correctly.
 - [ ] Convert AVIF → PNG → save → PNG created.
+
+## Batch Convert
+
+- [ ] Open Image Studio sidebar (Activity Bar → ⚡ icon or `Cmd+Shift+\`).
+- [ ] Verify the ⚡ "Batch Convert…" icon appears in the "Images" view title bar (next to the refresh icon).
+- [ ] Click ⚡ → a tab titled "Batch Convert" opens.
+- [ ] Folder dropdown lists every workspace folder containing images, plus "All folders" at the top.
+- [ ] Format chips (All / PNG / JPG / WebP / AVIF) toggle visible rows; only the active chip is highlighted.
+- [ ] Click a column header (Name / Format / Size / →Est.) to sort asc; click again for desc.
+- [ ] Check a few rows; counter updates ("3 selected", "5 selected (across 2 folders)").
+- [ ] After ~1s, "(working…)" in the →Est. column resolves to a byte count for selected rows.
+- [ ] Change Format / Quality / Lossless: estimates recompute for all selected rows.
+- [ ] Click "Review" → list narrows to only selected items (regardless of folder dropdown). Click again → restored.
+- [ ] Trigger a conflict: in a folder with `hero.png` and an existing `hero.webp`, select `hero.png` + a few non-conflicting PNGs, set format=WebP, click Convert. Verify the modal lists `hero.webp` and offers "Skip these" / "Overwrite all" / Cancel.
+- [ ] Choose "Skip these" → only non-conflicting files convert. Status icons cycle ⏳→🔄→✓; failed rows show ✗ with hover tooltip showing the error.
+- [ ] During a long convert, click Cancel: the in-progress file finishes, remaining rows stay ⏳, footer hides progress.
+- [ ] With "Trash originals" checked: cross-extension conversions move sources to OS trash on success. Same-extension (overwrite-in-place) leaves no trash entry.
+- [ ] Open a workspace with no images → batch view shows "No images in this workspace."
+- [ ] Add an image to a watched folder while batch view is open → the row appears.
+- [ ] Delete an image from disk while it's selected in batch view → the row disappears, selection counter updates.
+- [ ] Run a batch on a single WebP source with format=Same as source and quality lowered → file size decreases (overwrite-in-place).
