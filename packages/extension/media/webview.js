@@ -378,6 +378,7 @@ function applyTransform() {
     zoomPill.classList.add("visible");
   }
   if (editState.compareMode === "slider") updateSliderClip();
+  if (cropOverlay.classList.contains("active")) renderCropSelection();
 }
 function setZoom(z) {
   zoom = z <= 0.11 ? 0 : Math.min(8, z);
@@ -693,6 +694,7 @@ window.addEventListener("message", (event) => {
       errorBanner.classList.remove("visible");
       lastPreviewUri = "";
       mainImage.onload = () => {
+        if (cropOverlay.classList.contains("active")) return;
         applyCompareMode(editState.compareMode);
       };
       mainImage.src = srcUri;

@@ -419,6 +419,8 @@ function applyTransform(): void {
   }
   // Keep slider clip aligned with viewport regardless of zoom/pan
   if (editState.compareMode === 'slider') updateSliderClip();
+  // Keep crop selection aligned with the image during zoom/pan.
+  if (cropOverlay.classList.contains('active')) renderCropSelection();
 }
 function setZoom(z: number): void {
   zoom = z <= 0.11 ? 0 : Math.min(8, z);
@@ -722,6 +724,11 @@ window.addEventListener('message', (event) => {
       lastPreviewUri = '';
       // Set onload BEFORE src to avoid cache-load race condition
       mainImage.onload = () => {
+        // Don't disturb the crop view while cropping — applyCompareMode('off')
+        // inside enterCropMode reassigns mainImage.src, which retriggers this
+        // onload; without the guard it would re-apply slider mode and undo
+        // the temporary 'off' visual.
+        if (cropOverlay.classList.contains('active')) return;
         applyCompareMode(editState.compareMode);
       };
       mainImage.src = srcUri;
