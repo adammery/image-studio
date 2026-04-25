@@ -2,7 +2,7 @@
   "name": "image-studio",
   "displayName": "Image Studio",
   "publisher": "adammery",
-  "version": "0.1.1",
+  "version": "0.2.1",
   "private": true,
   "description": "Crop, resize, and compress images (PNG · JPG · WebP · AVIF) right in VSCode — with a live Before/After preview slider and an integrated file browser.",
   "icon": "media/icon.png",
