@@ -357,9 +357,16 @@ window.addEventListener('message', (event) => {
     case 'init': {
       folders = msg.folders as string[];
       allImages = msg.images as ImageRow[];
+      // Drop selection of files that no longer exist
+      for (const fs of [...selected]) if (!allImages.find((r) => r.fsPath === fs)) selected.delete(fs);
       const sel = document.getElementById('folder-select') as HTMLSelectElement;
+      const prev = sel.value || '__all__';
       sel.innerHTML = `<option value="__all__">All folders</option>` +
         folders.map((f) => `<option value="${escapeAttr(f)}">${escapeHtml(f === '.' ? '(workspace root)' : f)}</option>`).join('');
+      // Restore previous folder if still valid
+      const stillValid = prev === '__all__' || folders.includes(prev);
+      sel.value = stillValid ? prev : '__all__';
+      currentFolder = sel.value;
       renderSortHeader();
       syncLossless();
       renderList();

@@ -41,10 +41,29 @@ export class BatchEditorProvider implements vscode.CustomReadonlyEditorProvider<
     });
     this.estimators.set(panel, estimator);
 
+    const refreshWatcher = vscode.workspace.createFileSystemWatcher(
+      '**/*.{png,jpg,jpeg,webp,avif,PNG,JPG,JPEG,WEBP,AVIF}',
+    );
+    const reScan = async () => {
+      try {
+        const scan = await scanWorkspaceImages();
+        postToBatchWebview(panel, { type: 'init', folders: scan.folders, images: scan.images });
+      } catch { /* ignore */ }
+    };
+    refreshWatcher.onDidCreate(reScan);
+    refreshWatcher.onDidDelete(reScan);
+    const folderSub = vscode.workspace.onDidChangeWorkspaceFolders(reScan);
+    const configSub = vscode.workspace.onDidChangeConfiguration((e) => {
+      if (e.affectsConfiguration('imageStudio.excludeFolders')) void reScan();
+    });
+
     panel.onDidDispose(() => {
       this.estimators.get(panel)?.dispose();
       this.estimators.delete(panel);
       this.cancelTokens.delete(panel);
+      refreshWatcher.dispose();
+      folderSub.dispose();
+      configSub.dispose();
     });
 
     panel.webview.onDidReceiveMessage(async (msg: BatchWvMessage) => {
