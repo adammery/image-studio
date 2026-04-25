@@ -8,6 +8,7 @@ export interface BatchDocument extends vscode.CustomDocument {}
 
 export class BatchEditorProvider implements vscode.CustomReadonlyEditorProvider<BatchDocument> {
   public static readonly viewType = 'imageStudio.batchView';
+  /** Synthetic untitled URI used when opening the batch view. */
   public static readonly virtualUri = vscode.Uri.parse('untitled:image-studio-batch.batch');
 
   private readonly estimators = new Map<vscode.WebviewPanel, BatchEstimator>();

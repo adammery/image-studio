@@ -175,10 +175,12 @@ function statusIcon(s: 'pending' | 'in-progress' | 'done' | 'failed' | undefined
 function renderList(): void {
   const list = document.getElementById('batch-list') as HTMLDivElement;
   const empty = document.getElementById('batch-empty') as HTMLDivElement;
+  const scrollTop = list.scrollTop;
   const rows = visibleImages();
   if (rows.length === 0) {
     list.innerHTML = '';
     empty.classList.remove('hidden');
+    list.scrollTop = scrollTop;
     return;
   }
   empty.classList.add('hidden');
@@ -202,6 +204,7 @@ function renderList(): void {
       <div class="bl-est">${estText}</div>
     </div>`;
   }).join('');
+  list.scrollTop = scrollTop;
 }
 
 function escapeHtml(s: string): string {
@@ -353,6 +356,7 @@ window.addEventListener('message', (event) => {
     case 'estimate': {
       estimates.set(msg.srcPath as string, msg.result as { ok: boolean; size?: number; message?: string });
       renderList();
+      renderCounter();
       break;
     }
     // convertProgress / convertDone wired in Task 9
