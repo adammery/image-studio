@@ -35,6 +35,12 @@
           { "filenamePattern": "*.avif" }
         ],
         "priority": "default"
+      },
+      {
+        "viewType": "imageStudio.batchView",
+        "displayName": "Image Studio — Batch Convert",
+        "selector": [{ "filenamePattern": "image-studio-batch.batch" }],
+        "priority": "default"
       }
     ],
     "viewsContainers": {
@@ -67,8 +73,23 @@
         "command": "imageStudio.deleteImage",
         "title": "Move Image to Trash",
         "category": "Image Studio"
+      },
+      {
+        "command": "imageStudio.openBatchView",
+        "title": "Batch Convert…",
+        "icon": "$(zap)",
+        "category": "Image Studio"
       }
     ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "imageStudio.openBatchView",
+          "when": "view == imageStudio.files",
+          "group": "navigation"
+        }
+      ]
+    },
     "keybindings": [
       {
         "command": "workbench.view.extension.imageStudio",

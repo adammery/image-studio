@@ -28,11 +28,23 @@ const wvCtx = await esbuild.context({
   logLevel: 'info',
 });
 
+// Batch webview bundle (ESM, browser)
+const batchCtx = await esbuild.context({
+  entryPoints: ['media/batch.ts'],
+  outfile: 'media/batch.js',
+  bundle: true,
+  sourcemap: true,
+  format: 'esm',
+  platform: 'browser',
+  target: 'chrome100',
+  logLevel: 'info',
+});
+
 if (watch) {
-  await Promise.all([extCtx.watch(), wvCtx.watch()]);
+  await Promise.all([extCtx.watch(), wvCtx.watch(), batchCtx.watch()]);
   console.log('Watching for changes…');
 } else {
-  await Promise.all([extCtx.rebuild(), wvCtx.rebuild()]);
-  await Promise.all([extCtx.dispose(), wvCtx.dispose()]);
+  await Promise.all([extCtx.rebuild(), wvCtx.rebuild(), batchCtx.rebuild()]);
+  await Promise.all([extCtx.dispose(), wvCtx.dispose(), batchCtx.dispose()]);
   console.log('Build complete.');
 }
