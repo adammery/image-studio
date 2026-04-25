@@ -7,7 +7,7 @@ Referenčná karta pre prácu na tomto repe. Pri práci na čomkoľvek v `image-
 - **Plan 1 HOTOVÝ a v `main`** — `@image-studio/core` + `image-studio-mcp` (5 MCP tools). MCP server live, overený end-to-end.
 - **Plan 2 HOTOVÝ a v `main`** — `@image-studio/extension` VSCode extension: CustomEditorProvider, webview GUI (right panel Crop/Resize/Compress, Compare pill Off/Slider/Preview, zoom/pan, Save & Replace, Before/After info panel), Activity Bar sidebar, keyboard shortcuts, user settings, .vsix packaging.
 - **69 testov zelených** (45 core + 21 mcp-server + 3 extension).
-- **Build artefakty .vsix** lokálne len: 7.35 MB darwin-arm64-specific `.vsix` pri `packages/extension/image-studio.vsix`. Nie je v git-e (veľká natívna binárka sharp).
+- **Build artefakty .vsix** lokálne, platform-tagged: `image-studio-darwin-arm64.vsix` (7.35 MB) a `image-studio-win32-x64.vsix` (8.31 MB) v `packages/extension/`. Nie sú v git-e (veľké natívne binárky sharp). Build cez `./scripts/package.sh <target>`.
 - **Žiadna aktívna feature branch** — `main` je čistý. Staršie `feat/plan-1-core-mcp` je stále na GitHube (archív).
 
 **Ďalšie updates → nové branche z `main`** (`git checkout -b feat/…` alebo worktree cez `superpowers:using-git-worktrees`).
@@ -111,7 +111,7 @@ image-studio/
 - Undo/Redo history
 - Icon-tab right panel variant (ponechaný accordion)
 - Backup / hot-exit (unsaved edits neprežívajú close)
-- Cross-platform `.vsix` (aktuálne len darwin-arm64)
+- Auto-publishované cross-platform `.vsix`-y v CI (aktuálne sa buildujú lokálne cez `./scripts/package.sh <target>` — `darwin-arm64`, `win32-x64`, `linux-x64`, atď.)
 - Publish na VSCode Marketplace
 - CLI wrapper (tenký shim nad `core/`)
 - Dark/light theme overrides
@@ -141,7 +141,10 @@ npm run build                    # compile dist/ for all packages
 cd packages/extension
 npm run build                    # esbuild bundle: dist/extension.js + media/webview.js
 npm run dev                      # esbuild --watch
-./scripts/package.sh             # build .vsix (→ packages/extension/image-studio.vsix)
+./scripts/package.sh             # build .vsix for HOST platform (→ image-studio-<target>.vsix)
+./scripts/package.sh win32-x64   # cross-build for Windows
+./scripts/package.sh darwin-arm64
+./scripts/package.sh linux-x64
 ```
 
 **VSCode Extension Development Host:**
@@ -150,7 +153,9 @@ npm run dev                      # esbuild --watch
 
 **Install `.vsix`:**
 ```bash
-code --install-extension packages/extension/image-studio.vsix
+code --install-extension packages/extension/image-studio-darwin-arm64.vsix
+# or for Windows host:
+# code --install-extension packages/extension/image-studio-win32-x64.vsix
 ```
 
 ## Git conventions
@@ -183,7 +188,7 @@ code --install-extension packages/extension/image-studio.vsix
 
 **Commits robíme často.** Jedna zmena → jeden commit s jasnou správou.
 
-**Sharp native binary per platform.** `.vsix` je platform-specific. Ak buildujeme pre iný OS, treba nainštalovať to `@img/sharp-<platform>` balíky a re-package.
+**Sharp native binary per platform.** `.vsix` je platform-specific. `scripts/package.sh <target>` cez `npm install --os=… --cpu=…` vyberie správnu `@img/sharp-<target>` optional dep — netreba meniť host machine. `vsce package --target <target>` zabalí výsledný .vsix s platform tag-om (Marketplace + manuálny install vedia obe platformy rozlíšiť).
 
 **Claude Code MCP config** (pre lokálny dev MCP servera):
 
