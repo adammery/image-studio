@@ -508,12 +508,17 @@ function enterCropMode(): void {
   cropOverlay.classList.add('active');
   cropActions.classList.add('visible');
   comparePill.style.display = 'none';
+  // Force the plain-original visual while cropping so the slider handle and
+  // compare clip-path don't sit on top of the crop UI. editState.compareMode
+  // is left intact — exitCropMode re-applies it.
+  applyCompareMode('off');
   renderCropSelection();
 }
 function exitCropMode(): void {
   cropOverlay.classList.remove('active');
   cropActions.classList.remove('visible');
   comparePill.style.display = '';
+  applyCompareMode(editState.compareMode);
 }
 
 cropStart.addEventListener('click', enterCropMode);

@@ -466,12 +466,14 @@ function enterCropMode() {
   cropOverlay.classList.add("active");
   cropActions.classList.add("visible");
   comparePill.style.display = "none";
+  applyCompareMode("off");
   renderCropSelection();
 }
 function exitCropMode() {
   cropOverlay.classList.remove("active");
   cropActions.classList.remove("visible");
   comparePill.style.display = "";
+  applyCompareMode(editState.compareMode);
 }
 cropStart.addEventListener("click", enterCropMode);
 var toastEl = document.getElementById("toast");
