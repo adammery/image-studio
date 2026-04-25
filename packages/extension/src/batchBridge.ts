@@ -7,6 +7,7 @@ export type ConvertStatus = 'pending' | 'in-progress' | 'done' | 'failed';
 export type BatchExtMessage =
   | { type: 'init'; folders: string[]; images: ImageEntry[] }
   | { type: 'estimate'; srcPath: string; result: EstimateResult }
+  | { type: 'convertStarted'; total: number }
   | { type: 'convertProgress'; srcPath: string; status: ConvertStatus; error?: string; doneCount: number; totalCount: number }
   | { type: 'convertDone'; converted: number; failed: number; skipped: number }
   | { type: 'showError'; message: string };
@@ -20,4 +21,4 @@ export type BatchWvMessage =
   | { type: 'estimateInvalidate' }
   | { type: 'convertStart'; selected: string[]; settings: EstimatorSettings; trashOriginals: boolean; conflictPolicy: 'skip' | 'overwrite' }
   | { type: 'convertCancel' }
-  | { type: 'preflightRequest'; selected: string[]; settings: EstimatorSettings };
+  | { type: 'preflightRequest'; selected: string[]; settings: EstimatorSettings; trashOriginals: boolean };

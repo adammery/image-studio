@@ -338,6 +338,19 @@ document.querySelectorAll('.preset-btn').forEach((b) => {
   });
 });
 
+document.getElementById('btn-convert')!.addEventListener('click', () => {
+  vscode.postMessage({
+    type: 'preflightRequest',
+    selected: [...selected],
+    settings: currentSettings(),
+    trashOriginals: trashCheck().checked,
+  });
+});
+
+document.getElementById('btn-cancel')!.addEventListener('click', () => {
+  vscode.postMessage({ type: 'convertCancel' });
+});
+
 window.addEventListener('message', (event) => {
   const msg = event.data as { type: string; [k: string]: unknown };
   switch (msg.type) {
@@ -359,6 +372,33 @@ window.addEventListener('message', (event) => {
       renderCounter();
       break;
     }
-    // convertProgress / convertDone wired in Task 9
+    case 'convertStarted': {
+      const m = msg as { total: number };
+      void m.total;
+      converting = true;
+      document.getElementById('batch-footer-progress')!.classList.remove('hidden');
+      document.getElementById('batch-footer-actions')!.classList.add('hidden');
+      rowStatus.clear();
+      for (const fs of selected) rowStatus.set(fs, { status: 'pending' });
+      renderList();
+      break;
+    }
+    case 'convertProgress': {
+      const m = msg as { srcPath: string; status: 'pending' | 'in-progress' | 'done' | 'failed'; error?: string; doneCount: number; totalCount: number };
+      rowStatus.set(m.srcPath, { status: m.status, error: m.error });
+      const fill = document.getElementById('progress-fill') as HTMLDivElement;
+      const text = document.getElementById('progress-text') as HTMLSpanElement;
+      fill.style.width = `${(m.doneCount / m.totalCount) * 100}%`;
+      text.textContent = `${m.doneCount}/${m.totalCount}`;
+      renderList();
+      break;
+    }
+    case 'convertDone': {
+      converting = false;
+      document.getElementById('batch-footer-progress')!.classList.add('hidden');
+      document.getElementById('batch-footer-actions')!.classList.remove('hidden');
+      renderCounter();
+      break;
+    }
   }
 });
