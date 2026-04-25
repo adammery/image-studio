@@ -1,8 +1,8 @@
 # Image Studio
 
-A VSCode image editor with **live Before/After preview**. Open PNG, JPG, WebP, or AVIF files directly in your editor and crop, resize, or compress without leaving VSCode.
+A VSCode image editor with **live Before/After preview** plus a **bulk converter** for whole folders. Open PNG, JPG, WebP, or AVIF files directly in your editor and crop, resize, or compress without leaving VSCode.
 
-![Image Studio editor](https://raw.githubusercontent.com/adammery/image-studio/main/docs/screenshots/editor.webp)
+![Image Studio editor](https://raw.githubusercontent.com/adammery/image-studio/main/packages/extension/media/demos/editor.gif)
 
 ## What it does
 
@@ -10,6 +10,7 @@ A VSCode image editor with **live Before/After preview**. Open PNG, JPG, WebP, o
 - **Crop** with 8-handle overlay. Drag, press **Enter** to apply or **Esc** to cancel.
 - **Resize** with aspect ratio lock, width/height in `px` or `%`.
 - **Compress** — change format or dial in quality with presets (**High 92 / Med 85 / Low 75**) or a custom slider. Lossless toggle for WebP / AVIF.
+- **Batch Convert** — convert dozens of images in one go. Click the ⚡ icon in the sidebar header, multi-select across folders, pick a format + quality, run.
 - **Compare modes** — see the effect of your changes before saving:
   - **Original** — just the source file.
   - **Slider** — draggable reveal handle, split the view live.
@@ -18,6 +19,18 @@ A VSCode image editor with **live Before/After preview**. Open PNG, JPG, WebP, o
 - **Before/After info panel** — filename, dimensions, format, file size, and a `−87%` green reduction badge when the new file is smaller.
 - **Save & Replace** — change format to WebP and tick "Replace old image" → the original is moved to the system Trash after save. Reversible via the OS.
 - **Activity Bar sidebar** — browse every image in your workspace in a tree, click to open. Respects `.gitignore`-style excludes.
+
+## Batch Convert
+
+![Batch Convert demo](https://raw.githubusercontent.com/adammery/image-studio/main/packages/extension/media/demos/batch.gif)
+
+Click the **⚡** icon in the "Images" sidebar header to open a bulk converter view. Pick a folder from the dropdown, filter by source format (PNG / JPG / WebP / AVIF), multi-select images by checkbox, set the target Compress settings on the right, and hit **Convert**.
+
+- **Estimated post-compression size** for each selected row, recomputed live as you change format / quality.
+- **Conflict pre-flight** — if a target like `foo.webp` already exists for a source `foo.png`, you get a Skip these / Overwrite all / Cancel modal before any file is touched.
+- **Per-row status** — ⏳ pending → 🔄 in-progress → ✓ done / ✗ failed. Errors don't abort the batch; failed rows show the reason in the tooltip.
+- **Cancel mid-run** — finishes the in-flight file then stops, no half-written outputs.
+- **Trash originals** — toggle in the footer; cross-extension conversions move the source to the system Trash on success.
 
 ## How it works
 
