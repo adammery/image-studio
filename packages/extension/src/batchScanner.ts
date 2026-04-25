@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'node:path';
+import * as fsp from 'node:fs/promises';
 
 const IMAGE_GLOB = '**/*.{png,jpg,jpeg,webp,avif,PNG,JPG,JPEG,WEBP,AVIF}';
 
@@ -30,18 +31,20 @@ export async function scanWorkspaceImages(): Promise<ScanResult> {
   if (!roots?.length) return { folders: [], images: [] };
 
   const uris = await vscode.workspace.findFiles(IMAGE_GLOB, buildExcludeGlob());
-  const fs = await import('node:fs/promises');
 
   const images: ImageEntry[] = [];
   const folderSet = new Set<string>();
 
   for (const uri of uris) {
-    const root = roots.find((r) => uri.fsPath.startsWith(r.uri.fsPath));
+    const root = roots.find((r) => {
+      const rootPrefix = r.uri.fsPath.endsWith(path.sep) ? r.uri.fsPath : r.uri.fsPath + path.sep;
+      return uri.fsPath.startsWith(rootPrefix);
+    });
     if (!root) continue;
     let folderRel = path.relative(root.uri.fsPath, path.dirname(uri.fsPath));
     if (folderRel === '') folderRel = '.';
     let size = 0;
-    try { size = (await fs.stat(uri.fsPath)).size; } catch { /* file vanished */ continue; }
+    try { size = (await fsp.stat(uri.fsPath)).size; } catch { /* file vanished */ continue; }
     images.push({
       fsPath: uri.fsPath,
       basename: path.basename(uri.fsPath),
