@@ -107,7 +107,7 @@ document.getElementById('root')!.innerHTML = /* html */ `
           </div>
           <div class="row" id="quality-row">
             <label>Quality</label>
-            <input type="range" id="quality-slider" min="0" max="100" value="92">
+            <input type="range" id="quality-slider" min="1" max="100" value="92">
             <span class="qnum" id="quality-num">92</span>
           </div>
           <label class="check-row" id="lossless-row" style="display:none">
@@ -119,6 +119,13 @@ document.getElementById('root')!.innerHTML = /* html */ `
     </div>
 
     <div id="save-footer">
+      <div id="filename-row">
+        <label for="filename-input">Save as</label>
+        <div class="filename-input-wrap">
+          <input type="text" id="filename-input" spellcheck="false" autocomplete="off">
+          <span id="filename-ext">.png</span>
+        </div>
+      </div>
       <div id="save-row">
         <button class="btn primary" id="btn-save" style="flex:1">Save</button>
         <button class="btn"         id="btn-save-as" style="flex:1">Save As…</button>
@@ -213,6 +220,8 @@ const trashRow       = document.getElementById('trash-row')       as HTMLElement
 const trashCheck     = document.getElementById('trash-check')     as HTMLInputElement;
 const btnSave        = document.getElementById('btn-save')        as HTMLButtonElement;
 const btnSaveAs      = document.getElementById('btn-save-as')     as HTMLButtonElement;
+const filenameInput  = document.getElementById('filename-input')  as HTMLInputElement;
+const filenameExt    = document.getElementById('filename-ext')    as HTMLElement;
 const resizeW        = document.getElementById('resize-w')        as HTMLInputElement;
 const resizeH        = document.getElementById('resize-h')        as HTMLInputElement;
 const resizeUnit     = document.getElementById('resize-unit')     as HTMLSelectElement;
@@ -222,6 +231,16 @@ const resizeError    = document.getElementById('resize-error')    as HTMLElement
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function basename(p: string): string { return p.split('/').pop() ?? p; }
+function stripExt(name: string): string {
+  const dot = name.lastIndexOf('.');
+  return dot > 0 ? name.slice(0, dot) : name;
+}
+function sanitizeFilename(raw: string): string {
+  // Strip path separators, control chars, and a trailing known-image extension.
+  let s = raw.replace(/[\\/\x00-\x1f]/g, '').replace(/^\.+/, '').trim();
+  s = s.replace(/\.(png|jpe?g|webp|avif)$/i, '');
+  return s;
+}
 function fmtBytes(b: number): string {
   if (b < 1024) return `${b} B`;
   if (b < 1_048_576) return `${(b / 1024).toFixed(1)} KB`;
@@ -250,6 +269,15 @@ function syncCompressUI(): void {
   losslessRow.style.display = (f === 'webp' || f === 'avif') ? '' : 'none';
   (qualitySlider as HTMLInputElement).disabled = editState.lossless;
   qualityNum.style.opacity = editState.lossless ? '0.4' : '1';
+  syncFilenameUI();
+}
+function syncFilenameUI(): void {
+  if (!srcMeta) return;
+  filenameExt.textContent = fmtExt(editState, srcMeta.format);
+}
+function currentFilename(): string {
+  const clean = sanitizeFilename(filenameInput.value);
+  return clean.length > 0 ? clean : stripExt(srcPath);
 }
 function syncTrashUI(): void {
   const willChangePath = editState.format !== 'same';
@@ -614,8 +642,8 @@ losslessCheck.addEventListener('change', () => {
 
 // ── Save footer ───────────────────────────────────────────────────────────────
 trashCheck.addEventListener('change', () => { editState.trashOriginal = trashCheck.checked; });
-btnSave.addEventListener('click',    () => { vscode.postMessage({ type: 'save', trashOriginal: editState.trashOriginal }); });
-btnSaveAs.addEventListener('click',  () => { vscode.postMessage({ type: 'saveAs' }); });
+btnSave.addEventListener('click',    () => { vscode.postMessage({ type: 'save', trashOriginal: editState.trashOriginal, filename: currentFilename() }); });
+btnSaveAs.addEventListener('click',  () => { vscode.postMessage({ type: 'saveAs', filename: currentFilename() }); });
 
 // ── Resize ────────────────────────────────────────────────────────────────────
 let srcAspect = 1;
@@ -701,6 +729,7 @@ window.addEventListener('message', (event) => {
       qualitySlider.value    = String(editState.quality);
       qualityNum.textContent = String(editState.quality);
       losslessCheck.checked  = editState.lossless;
+      filenameInput.value    = stripExt(srcPath);
       syncCompressUI(); syncTrashUI(); syncResizeDefaults();
       syncPresetButtons(editState.quality);
       break;
@@ -733,6 +762,7 @@ window.addEventListener('message', (event) => {
       editState = { format: 'same', quality: 92, lossless: false, compareMode: editState.compareMode, trashOriginal: false };
       formatSelect.value = 'same'; qualitySlider.value = '92'; qualityNum.textContent = '92';
       losslessCheck.checked = false; trashCheck.checked = false;
+      filenameInput.value = stripExt(srcPath);
       syncCompressUI(); syncTrashUI(); syncPresetButtons(92);
       break;
     }

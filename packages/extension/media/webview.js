@@ -102,7 +102,7 @@ document.getElementById("root").innerHTML = /* html */
           </div>
           <div class="row" id="quality-row">
             <label>Quality</label>
-            <input type="range" id="quality-slider" min="0" max="100" value="92">
+            <input type="range" id="quality-slider" min="1" max="100" value="92">
             <span class="qnum" id="quality-num">92</span>
           </div>
           <label class="check-row" id="lossless-row" style="display:none">
@@ -114,6 +114,13 @@ document.getElementById("root").innerHTML = /* html */
     </div>
 
     <div id="save-footer">
+      <div id="filename-row">
+        <label for="filename-input">Save as</label>
+        <div class="filename-input-wrap">
+          <input type="text" id="filename-input" spellcheck="false" autocomplete="off">
+          <span id="filename-ext">.png</span>
+        </div>
+      </div>
       <div id="save-row">
         <button class="btn primary" id="btn-save" style="flex:1">Save</button>
         <button class="btn"         id="btn-save-as" style="flex:1">Save As\u2026</button>
@@ -191,6 +198,8 @@ var trashRow = document.getElementById("trash-row");
 var trashCheck = document.getElementById("trash-check");
 var btnSave = document.getElementById("btn-save");
 var btnSaveAs = document.getElementById("btn-save-as");
+var filenameInput = document.getElementById("filename-input");
+var filenameExt = document.getElementById("filename-ext");
 var resizeW = document.getElementById("resize-w");
 var resizeH = document.getElementById("resize-h");
 var resizeUnit = document.getElementById("resize-unit");
@@ -199,6 +208,15 @@ var resizeApply = document.getElementById("resize-apply");
 var resizeError = document.getElementById("resize-error");
 function basename(p) {
   return p.split("/").pop() ?? p;
+}
+function stripExt(name) {
+  const dot = name.lastIndexOf(".");
+  return dot > 0 ? name.slice(0, dot) : name;
+}
+function sanitizeFilename(raw) {
+  let s = raw.replace(/[\\/\x00-\x1f]/g, "").replace(/^\.+/, "").trim();
+  s = s.replace(/\.(png|jpe?g|webp|avif)$/i, "");
+  return s;
 }
 function fmtBytes(b) {
   if (b < 1024) return `${b} B`;
@@ -231,6 +249,15 @@ function syncCompressUI() {
   losslessRow.style.display = f === "webp" || f === "avif" ? "" : "none";
   qualitySlider.disabled = editState.lossless;
   qualityNum.style.opacity = editState.lossless ? "0.4" : "1";
+  syncFilenameUI();
+}
+function syncFilenameUI() {
+  if (!srcMeta) return;
+  filenameExt.textContent = fmtExt(editState, srcMeta.format);
+}
+function currentFilename() {
+  const clean = sanitizeFilename(filenameInput.value);
+  return clean.length > 0 ? clean : stripExt(srcPath);
 }
 function syncTrashUI() {
   const willChangePath = editState.format !== "same";
@@ -587,10 +614,10 @@ trashCheck.addEventListener("change", () => {
   editState.trashOriginal = trashCheck.checked;
 });
 btnSave.addEventListener("click", () => {
-  vscode.postMessage({ type: "save", trashOriginal: editState.trashOriginal });
+  vscode.postMessage({ type: "save", trashOriginal: editState.trashOriginal, filename: currentFilename() });
 });
 btnSaveAs.addEventListener("click", () => {
-  vscode.postMessage({ type: "saveAs" });
+  vscode.postMessage({ type: "saveAs", filename: currentFilename() });
 });
 var srcAspect = 1;
 function syncResizeDefaults() {
@@ -676,6 +703,7 @@ window.addEventListener("message", (event) => {
       qualitySlider.value = String(editState.quality);
       qualityNum.textContent = String(editState.quality);
       losslessCheck.checked = editState.lossless;
+      filenameInput.value = stripExt(srcPath);
       syncCompressUI();
       syncTrashUI();
       syncResizeDefaults();
@@ -717,6 +745,7 @@ window.addEventListener("message", (event) => {
       qualityNum.textContent = "92";
       losslessCheck.checked = false;
       trashCheck.checked = false;
+      filenameInput.value = stripExt(srcPath);
       syncCompressUI();
       syncTrashUI();
       syncPresetButtons(92);

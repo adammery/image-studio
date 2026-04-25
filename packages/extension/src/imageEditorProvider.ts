@@ -82,20 +82,20 @@ export class ImageEditorProvider implements vscode.CustomEditorProvider<ImageDoc
   }
 
   async saveCustomDocument(
-    document: ImageDocument,
+    _document: ImageDocument,
     _cancellation: vscode.CancellationToken,
   ): Promise<void> {
-    const state = this.editStates.get(document.uri.toString()) ?? defaultEditState();
-    await this._performSave(document, document.uri, state);
+    // Intentional no-op: save only happens via the in-panel Save button.
+    // VSCode's Cmd+S / autoSave / saveAll must not trigger image re-encoding.
   }
 
   async saveCustomDocumentAs(
-    document: ImageDocument,
-    destination: vscode.Uri,
+    _document: ImageDocument,
+    _destination: vscode.Uri,
     _cancellation: vscode.CancellationToken,
   ): Promise<void> {
-    const state = this.editStates.get(document.uri.toString()) ?? defaultEditState();
-    await this._performSave(document, destination, state);
+    // Intentional no-op: Save As flows through the webview's own Save As… button,
+    // which uses vscode.window.showSaveDialog directly.
   }
 
   async revertCustomDocument(
@@ -130,18 +130,36 @@ export class ImageEditorProvider implements vscode.CustomEditorProvider<ImageDoc
           this.encoders.get(document.uri.toString())?.schedule(document.fsPath, msg.state);
           this.context.globalState.update('compareMode', msg.state.compareMode);
           break;
-        case 'save':
-          await this._performSave(
-            document,
-            document.uri,
-            { ...(this.editStates.get(document.uri.toString()) ?? defaultEditState()), trashOriginal: msg.trashOriginal },
-          );
+        case 'save': {
+          const state = { ...(this.editStates.get(document.uri.toString()) ?? defaultEditState()), trashOriginal: msg.trashOriginal };
+          const dstUri = this._buildDstUri(document, state, msg.filename);
+          await this._performSave(document, dstUri, state);
           break;
-        case 'saveAs':
-          await vscode.commands.executeCommand('workbench.action.files.saveAs');
+        }
+        case 'saveAs': {
+          const state = this.editStates.get(document.uri.toString()) ?? defaultEditState();
+          const defaultUri = this._buildDstUri(document, state, msg.filename);
+          const picked = await vscode.window.showSaveDialog({
+            defaultUri,
+            filters: { Image: ['png', 'jpg', 'jpeg', 'webp', 'avif'] },
+          });
+          if (picked) await this._performSave(document, picked, state);
           break;
+        }
       }
     });
+  }
+
+  private _buildDstUri(document: ImageDocument, state: EditState, rawFilename: string): vscode.Uri {
+    const srcExt = path.extname(document.fsPath).slice(1).toLowerCase();
+    const dstExt = state.format === 'same' ? srcExt : (state.format === 'jpeg' ? 'jpg' : state.format);
+    const srcBase = path.basename(document.fsPath, path.extname(document.fsPath));
+    const cleaned = rawFilename
+      .replace(/[\\/\x00-\x1f]/g, '')
+      .replace(/\.(png|jpe?g|webp|avif)$/i, '')
+      .trim();
+    const name = cleaned.length > 0 ? cleaned : srcBase;
+    return vscode.Uri.file(path.join(path.dirname(document.fsPath), `${name}.${dstExt}`));
   }
 
   private async _performSave(
@@ -162,17 +180,24 @@ export class ImageEditorProvider implements vscode.CustomEditorProvider<ImageDoc
     const formatChanged = state.format !== 'same' && dstExt !== srcExt;
     if (formatChanged && dstPath !== srcPath) {
       const pick = await vscode.window.showInformationMessage(
-        `You changed the format from ${srcExt.toUpperCase()} to ${dstExt.toUpperCase()}.\n` +
-        `Saving will create ${path.basename(dstPath)}. ` +
-        `The original .${srcExt} will remain unless "Move original to Trash" is checked.`,
-        { modal: true },
-        `Save as .${dstExt}`,
-        'Save As… instead',
+        `Create ${path.basename(dstPath)}?`,
+        {
+          modal: true,
+          detail: state.trashOriginal
+            ? `Original .${srcExt} will be moved to Trash.`
+            : `Original .${srcExt} will stay.`,
+        },
+        'Save',
+        'Save As…',
       );
       if (!pick) return;
-      if (pick === 'Save As… instead') {
-        await vscode.commands.executeCommand('workbench.action.files.saveAs');
-        return;
+      if (pick === 'Save As…') {
+        const picked = await vscode.window.showSaveDialog({
+          defaultUri: vscode.Uri.file(dstPath),
+          filters: { Image: ['png', 'jpg', 'jpeg', 'webp', 'avif'] },
+        });
+        if (!picked) return;
+        dstPath = picked.fsPath;
       }
     }
 

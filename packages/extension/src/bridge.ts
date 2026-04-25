@@ -14,5 +14,5 @@ export type ExtMessage =
 // round-tripped through the webview.
 export type WvMessage =
   | { type: 'editStateChanged'; state: EditState }
-  | { type: 'save'; trashOriginal: boolean }
-  | { type: 'saveAs' };
+  | { type: 'save'; trashOriginal: boolean; filename: string }
+  | { type: 'saveAs'; filename: string };
