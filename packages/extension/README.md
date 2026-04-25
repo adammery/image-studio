@@ -1,8 +1,15 @@
 # Image Studio
 
-A VSCode image editor with **live Before/After preview** plus a **bulk converter** for whole folders. Open PNG, JPG, WebP, or AVIF files directly in your editor and crop, resize, or compress without leaving VSCode.
+A VSCode image editor with **live Before/After preview** plus a **bulk converter** for whole folders. Open PNG, JPG, WebP, or AVIF files directly in your editor and crop, resize, or compress without leaving VSCode — or let an AI assistant (Claude Code, Cursor, Claude Desktop) do the conversions for you over MCP.
 
 ![Image Studio editor](https://raw.githubusercontent.com/adammery/image-studio/main/packages/extension/media/demos/editor.gif)
+
+![Batch Convert demo](https://raw.githubusercontent.com/adammery/image-studio/main/packages/extension/media/demos/batch.gif)
+
+## Two ways to use it
+
+- **GUI** — click an image in the Explorer, edit in the custom editor, save. See *What it does* below.
+- **AI / MCP** — tell Claude *"convert all PNGs in /icons to webp quality 80"* and the bundled [`image-studio-mcp`](#ai-counterpart--image-studio-mcp) server runs the job on your disk. Same `sharp` engine, same local-only privacy.
 
 ## What it does
 
@@ -21,8 +28,6 @@ A VSCode image editor with **live Before/After preview** plus a **bulk converter
 - **Activity Bar sidebar** — browse every image in your workspace in a tree, click to open. Respects `.gitignore`-style excludes.
 
 ## Batch Convert
-
-![Batch Convert demo](https://raw.githubusercontent.com/adammery/image-studio/main/packages/extension/media/demos/batch.gif)
 
 Click the **⚡** icon in the "Images" sidebar header to open a bulk converter view. Pick a folder from the dropdown, filter by source format (PNG / JPG / WebP / AVIF), multi-select images by checkbox, set the target Compress settings on the right, and hit **Convert**.
 
