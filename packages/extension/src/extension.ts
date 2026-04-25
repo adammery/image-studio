@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'node:path';
 import { ImageEditorProvider } from './imageEditorProvider.js';
 import { ImageTreeProvider } from './imageTreeProvider.js';
+import { BatchEditorProvider } from './batchEditorProvider.js';
 
 export function activate(context: vscode.ExtensionContext): void {
   const editorProvider = new ImageEditorProvider(context);
@@ -14,6 +15,28 @@ export function activate(context: vscode.ExtensionContext): void {
         webviewOptions: { retainContextWhenHidden: true },
       },
     ),
+  );
+
+  // Batch convert view
+  const batchProvider = new BatchEditorProvider(context);
+  context.subscriptions.push(
+    vscode.window.registerCustomEditorProvider(
+      BatchEditorProvider.viewType,
+      batchProvider,
+      {
+        supportsMultipleEditorsPerDocument: true,
+        webviewOptions: { retainContextWhenHidden: true },
+      },
+    ),
+  );
+  context.subscriptions.push(
+    vscode.commands.registerCommand('imageStudio.openBatchView', async () => {
+      await vscode.commands.executeCommand(
+        'vscode.openWith',
+        BatchEditorProvider.virtualUri,
+        BatchEditorProvider.viewType,
+      );
+    }),
   );
 
   // Activity Bar view: list of images in the workspace
