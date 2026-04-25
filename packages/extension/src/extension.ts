@@ -24,7 +24,7 @@ export function activate(context: vscode.ExtensionContext): void {
       BatchEditorProvider.viewType,
       batchProvider,
       {
-        supportsMultipleEditorsPerDocument: true,
+        supportsMultipleEditorsPerDocument: false,
         webviewOptions: { retainContextWhenHidden: true },
       },
     ),
