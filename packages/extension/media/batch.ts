@@ -280,7 +280,6 @@ document.getElementById('batch-list')!.addEventListener('change', (e) => {
   const fs = row.dataset.fs!;
   if (cb.checked) selected.add(fs);
   else { selected.delete(fs); estimates.delete(fs); }
-  vscode.postMessage({ type: 'selectionChanged', selected: [...selected] });
   if (cb.checked) {
     vscode.postMessage({ type: 'estimateRequest', srcPaths: [fs], settings: currentSettings() });
   }

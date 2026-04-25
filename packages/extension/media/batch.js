@@ -265,7 +265,6 @@ document.getElementById("batch-list").addEventListener("change", (e) => {
     selected.delete(fs);
     estimates.delete(fs);
   }
-  vscode.postMessage({ type: "selectionChanged", selected: [...selected] });
   if (cb.checked) {
     vscode.postMessage({ type: "estimateRequest", srcPaths: [fs], settings: currentSettings() });
   }

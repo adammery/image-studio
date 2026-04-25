@@ -15,10 +15,7 @@ export type BatchExtMessage =
 // NOTE: settings.format must be 'jpeg', never 'jpg' — see EstimatorSettings union.
 /** Webview → Extension */
 export type BatchWvMessage =
-  | { type: 'selectionChanged'; selected: string[] }
-  | { type: 'settingsChanged'; settings: EstimatorSettings }
   | { type: 'estimateRequest'; srcPaths: string[]; settings: EstimatorSettings }
   | { type: 'estimateInvalidate' }
-  | { type: 'convertStart'; selected: string[]; settings: EstimatorSettings; trashOriginals: boolean; conflictPolicy: 'skip' | 'overwrite' }
-  | { type: 'convertCancel' }
-  | { type: 'preflightRequest'; selected: string[]; settings: EstimatorSettings; trashOriginals: boolean };
+  | { type: 'preflightRequest'; selected: string[]; settings: EstimatorSettings; trashOriginals: boolean }
+  | { type: 'convertCancel' };
