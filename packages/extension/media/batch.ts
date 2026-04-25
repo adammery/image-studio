@@ -399,5 +399,10 @@ window.addEventListener('message', (event) => {
       renderCounter();
       break;
     }
+    case 'showError': {
+      const list = document.getElementById('batch-list') as HTMLDivElement;
+      list.innerHTML = `<div class="empty">${escapeHtml(msg.message as string)}</div>`;
+      break;
+    }
   }
 });
