@@ -1,3 +1,5 @@
+export {};
+
 declare const acquireVsCodeApi: () => {
   postMessage: (msg: unknown) => void;
   getState: () => unknown;
