@@ -88,8 +88,273 @@ document.getElementById('root')!.innerHTML = /* html */ `
 </div>
 `;
 
+// State
+type ImageRow = {
+  fsPath: string;
+  basename: string;
+  ext: string;
+  size: number;
+  folderRel: string;
+};
+
+let allImages: ImageRow[] = [];
+let folders: string[] = [];
+let currentFolder = '__all__';
+let activeChip: 'all' | 'png' | 'jpg' | 'webp' | 'avif' = 'all';
+let sortBy: 'name' | 'format' | 'size' | 'est' = 'name';
+let sortDir: 'asc' | 'desc' = 'asc';
+let estimates = new Map<string, { ok: boolean; size?: number; message?: string }>();
+let selected = new Set<string>();
+let reviewMode = false;
+let converting = false;
+let rowStatus = new Map<string, { status: 'pending' | 'in-progress' | 'done' | 'failed'; error?: string }>();
+
+// Settings (right panel)
+const formatSelect = () => document.getElementById('format-select') as HTMLSelectElement;
+const qualitySlider = () => document.getElementById('quality-slider') as HTMLInputElement;
+const qualityNum = () => document.getElementById('quality-num') as HTMLSpanElement;
+const losslessCheck = () => document.getElementById('lossless-check') as HTMLInputElement;
+const losslessRow = () => document.getElementById('lossless-row') as HTMLLabelElement;
+const trashCheck = () => document.getElementById('trash-check') as HTMLInputElement;
+
+function currentSettings() {
+  return {
+    format: formatSelect().value as 'same' | 'png' | 'jpeg' | 'webp' | 'avif',
+    quality: parseInt(qualitySlider().value, 10),
+    lossless: losslessCheck().checked,
+  };
+}
+
+function visibleImages(): ImageRow[] {
+  let rows = allImages;
+  if (reviewMode) rows = rows.filter((r) => selected.has(r.fsPath));
+  else if (currentFolder !== '__all__') rows = rows.filter((r) => r.folderRel === currentFolder);
+  if (activeChip !== 'all') rows = rows.filter((r) => normExt(r.ext) === activeChip);
+  rows = rows.slice().sort((a, b) => {
+    let cmp = 0;
+    switch (sortBy) {
+      case 'name':   cmp = a.basename.localeCompare(b.basename); break;
+      case 'format': cmp = a.ext.localeCompare(b.ext); break;
+      case 'size':   cmp = a.size - b.size; break;
+      case 'est': {
+        const ea = estimates.get(a.fsPath);
+        const eb = estimates.get(b.fsPath);
+        const sa = ea?.ok ? ea.size! : Number.POSITIVE_INFINITY;
+        const sb = eb?.ok ? eb.size! : Number.POSITIVE_INFINITY;
+        cmp = sa - sb; break;
+      }
+    }
+    return sortDir === 'asc' ? cmp : -cmp;
+  });
+  return rows;
+}
+
+function normExt(ext: string): 'png' | 'jpg' | 'webp' | 'avif' | 'all' {
+  const e = ext.toLowerCase();
+  if (e === 'jpeg') return 'jpg';
+  if (e === 'png' || e === 'jpg' || e === 'webp' || e === 'avif') return e;
+  return 'all';
+}
+
+function fmtBytes(b: number): string {
+  if (b < 1024) return `${b} B`;
+  if (b < 1_048_576) return `${(b / 1024).toFixed(1)} KB`;
+  return `${(b / 1_048_576).toFixed(2)} MB`;
+}
+
+function statusIcon(s: 'pending' | 'in-progress' | 'done' | 'failed' | undefined): string {
+  switch (s) {
+    case 'pending':     return '⏳';
+    case 'in-progress': return '🔄';
+    case 'done':        return '✓';
+    case 'failed':      return '✗';
+    default:            return '';
+  }
+}
+
+function renderList(): void {
+  const list = document.getElementById('batch-list') as HTMLDivElement;
+  const empty = document.getElementById('batch-empty') as HTMLDivElement;
+  const rows = visibleImages();
+  if (rows.length === 0) {
+    list.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+  const showFolderPrefix = currentFolder === '__all__' || reviewMode;
+  list.innerHTML = rows.map((r) => {
+    const checked = selected.has(r.fsPath) ? 'checked' : '';
+    const est = estimates.get(r.fsPath);
+    let estText = '—';
+    if (est) estText = est.ok ? fmtBytes(est.size!) : 'error';
+    else if (selected.has(r.fsPath)) estText = '(working…)';
+    const stat = rowStatus.get(r.fsPath);
+    const failed = stat?.status === 'failed';
+    const name = showFolderPrefix && r.folderRel !== '.' ? `${r.folderRel}/${r.basename}` : r.basename;
+    const title = stat?.error ? ` title="${escapeAttr(stat.error)}"` : '';
+    return `<div class="batch-row${failed ? ' failed' : ''}" data-fs="${escapeAttr(r.fsPath)}"${title}>
+      <div class="bl-cb"><input type="checkbox" ${checked}></div>
+      <div class="bl-stat">${statusIcon(stat?.status)}</div>
+      <div class="bl-name">${escapeHtml(name)}</div>
+      <div class="bl-fmt">${r.ext.toUpperCase()}</div>
+      <div class="bl-size">${fmtBytes(r.size)}</div>
+      <div class="bl-est">${estText}</div>
+    </div>`;
+  }).join('');
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+}
+function escapeAttr(s: string): string { return escapeHtml(s); }
+
+function distinctFolderCount(): number {
+  const set = new Set<string>();
+  for (const fs of selected) {
+    const row = allImages.find((r) => r.fsPath === fs);
+    if (row) set.add(row.folderRel);
+  }
+  return set.size;
+}
+
+function renderCounter(): void {
+  const c = document.getElementById('batch-counter')!;
+  const n = selected.size;
+  const f = distinctFolderCount();
+  c.textContent = n === 0 ? '0 selected' :
+                  f <= 1   ? `${n} selected` :
+                             `${n} selected (across ${f} folders)`;
+  const btn = document.getElementById('btn-convert') as HTMLButtonElement;
+  btn.textContent = `Convert ${n}`;
+  btn.disabled = n === 0 || converting;
+}
+
+function renderSortHeader(): void {
+  document.querySelectorAll('#batch-list-header .sortable').forEach((el) => {
+    el.classList.remove('sort-asc', 'sort-desc');
+    if ((el as HTMLElement).dataset.sort === sortBy) {
+      el.classList.add(sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+    }
+  });
+}
+
+function syncLossless(): void {
+  const f = formatSelect().value;
+  losslessRow().style.display = (f === 'webp' || f === 'avif') ? '' : 'none';
+}
+
+// Events
+document.getElementById('folder-select')!.addEventListener('change', (e) => {
+  currentFolder = (e.target as HTMLSelectElement).value;
+  reviewMode = false;
+  renderList();
+});
+
+document.getElementById('format-chips')!.addEventListener('click', (e) => {
+  const t = (e.target as HTMLElement).closest('.chip') as HTMLElement | null;
+  if (!t) return;
+  document.querySelectorAll('#format-chips .chip').forEach((c) => c.classList.remove('active'));
+  t.classList.add('active');
+  activeChip = t.dataset.fmt as typeof activeChip;
+  renderList();
+});
+
+document.getElementById('batch-list-header')!.addEventListener('click', (e) => {
+  const t = (e.target as HTMLElement).closest('.sortable') as HTMLElement | null;
+  if (!t) return;
+  const key = t.dataset.sort as typeof sortBy;
+  if (key === sortBy) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+  else { sortBy = key; sortDir = 'asc'; }
+  renderSortHeader();
+  renderList();
+});
+
+document.getElementById('batch-list')!.addEventListener('change', (e) => {
+  const cb = e.target as HTMLInputElement;
+  if (cb.tagName !== 'INPUT' || cb.type !== 'checkbox') return;
+  const row = cb.closest('.batch-row') as HTMLElement;
+  const fs = row.dataset.fs!;
+  if (cb.checked) selected.add(fs);
+  else { selected.delete(fs); estimates.delete(fs); }
+  vscode.postMessage({ type: 'selectionChanged', selected: [...selected] });
+  if (cb.checked) {
+    vscode.postMessage({ type: 'estimateRequest', srcPaths: [fs], settings: currentSettings() });
+  }
+  renderCounter();
+  renderList();
+});
+
+document.getElementById('btn-review')!.addEventListener('click', () => {
+  reviewMode = !reviewMode;
+  (document.getElementById('btn-review') as HTMLButtonElement).classList.toggle('primary', reviewMode);
+  renderList();
+});
+
+formatSelect().addEventListener('change', () => {
+  syncLossless();
+  estimates.clear();
+  vscode.postMessage({ type: 'estimateInvalidate' });
+  if (selected.size > 0) {
+    vscode.postMessage({ type: 'estimateRequest', srcPaths: [...selected], settings: currentSettings() });
+  }
+  renderList();
+});
+
+qualitySlider().addEventListener('input', () => {
+  qualityNum().textContent = qualitySlider().value;
+});
+qualitySlider().addEventListener('change', () => {
+  estimates.clear();
+  vscode.postMessage({ type: 'estimateInvalidate' });
+  if (selected.size > 0) {
+    vscode.postMessage({ type: 'estimateRequest', srcPaths: [...selected], settings: currentSettings() });
+  }
+  renderList();
+});
+losslessCheck().addEventListener('change', () => {
+  estimates.clear();
+  vscode.postMessage({ type: 'estimateInvalidate' });
+  if (selected.size > 0) {
+    vscode.postMessage({ type: 'estimateRequest', srcPaths: [...selected], settings: currentSettings() });
+  }
+  renderList();
+});
+
+document.querySelectorAll('.preset-btn').forEach((b) => {
+  b.addEventListener('click', () => {
+    const q = parseInt((b as HTMLElement).dataset.q!, 10);
+    qualitySlider().value = String(q);
+    qualityNum().textContent = String(q);
+    estimates.clear();
+    vscode.postMessage({ type: 'estimateInvalidate' });
+    if (selected.size > 0) {
+      vscode.postMessage({ type: 'estimateRequest', srcPaths: [...selected], settings: currentSettings() });
+    }
+    renderList();
+  });
+});
+
 window.addEventListener('message', (event) => {
   const msg = event.data as { type: string; [k: string]: unknown };
-  // wired in Task 8
-  void msg;
+  switch (msg.type) {
+    case 'init': {
+      folders = msg.folders as string[];
+      allImages = msg.images as ImageRow[];
+      const sel = document.getElementById('folder-select') as HTMLSelectElement;
+      sel.innerHTML = `<option value="__all__">All folders</option>` +
+        folders.map((f) => `<option value="${escapeAttr(f)}">${escapeHtml(f === '.' ? '(workspace root)' : f)}</option>`).join('');
+      renderSortHeader();
+      syncLossless();
+      renderList();
+      renderCounter();
+      break;
+    }
+    case 'estimate': {
+      estimates.set(msg.srcPath as string, msg.result as { ok: boolean; size?: number; message?: string });
+      renderList();
+      break;
+    }
+    // convertProgress / convertDone wired in Task 9
+  }
 });
