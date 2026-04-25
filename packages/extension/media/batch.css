@@ -1,1 +1,54 @@
-/* Stub — populated in Task 7. */
+html, body { height: 100%; margin: 0; padding: 0; color: var(--vscode-foreground); background: var(--vscode-editor-background); font-family: var(--vscode-font-family); font-size: 13px; }
+#root, #batch-main { height: 100%; }
+
+#batch-main { display: grid; grid-template-columns: 1fr 320px; height: 100%; }
+#batch-list-area { display: flex; flex-direction: column; min-width: 0; border-right: 1px solid var(--vscode-panel-border, rgba(255,255,255,.08)); }
+#batch-panel { display: flex; flex-direction: column; min-width: 0; }
+
+#batch-toolbar { padding: 10px 12px; border-bottom: 1px solid var(--vscode-panel-border, rgba(255,255,255,.08)); display: flex; flex-direction: column; gap: 8px; }
+.bt-row { display: flex; align-items: center; gap: 8px; }
+.bt-label { width: 60px; font-size: 12px; color: var(--vscode-descriptionForeground); }
+#folder-select { flex: 1; background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border, transparent); padding: 4px 6px; border-radius: 3px; font: inherit; }
+
+.chips { display: flex; gap: 4px; flex-wrap: wrap; }
+.chip { background: transparent; color: var(--vscode-foreground); border: 1px solid var(--vscode-panel-border, rgba(255,255,255,.12)); border-radius: 999px; padding: 2px 10px; cursor: pointer; font: inherit; font-size: 12px; }
+.chip:hover { background: rgba(255,255,255,.04); }
+.chip.active { background: var(--vscode-button-background); color: var(--vscode-button-foreground); border-color: var(--vscode-button-background); }
+
+#batch-list-header, .batch-row { display: grid; grid-template-columns: 28px 24px 1fr 80px 90px 110px; gap: 8px; align-items: center; padding: 4px 12px; }
+#batch-list-header { font-size: 11px; text-transform: uppercase; color: var(--vscode-descriptionForeground); border-bottom: 1px solid var(--vscode-panel-border, rgba(255,255,255,.08)); user-select: none; }
+.sortable { cursor: pointer; }
+.sortable:hover { color: var(--vscode-foreground); }
+.sort-asc::after  { content: ' ▴'; }
+.sort-desc::after { content: ' ▾'; }
+
+#batch-list { flex: 1; overflow-y: auto; }
+.batch-row { font-size: 13px; cursor: default; }
+.batch-row:hover { background: rgba(255,255,255,.03); }
+.batch-row input[type=checkbox] { margin: 0; }
+.batch-row .bl-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.batch-row .bl-fmt  { color: var(--vscode-descriptionForeground); }
+.batch-row .bl-size { color: var(--vscode-descriptionForeground); font-variant-numeric: tabular-nums; }
+.batch-row .bl-est  { color: var(--vscode-descriptionForeground); font-variant-numeric: tabular-nums; }
+.batch-row.failed .bl-est, .batch-row.failed .bl-name { color: var(--vscode-errorForeground); }
+.batch-row .bl-stat { font-size: 13px; text-align: center; }
+
+.empty { padding: 24px 12px; color: var(--vscode-descriptionForeground); text-align: center; }
+.hidden { display: none !important; }
+
+#batch-footer { border-top: 1px solid var(--vscode-panel-border, rgba(255,255,255,.08)); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+#batch-footer-info, #batch-footer-progress, #batch-footer-actions { display: flex; align-items: center; gap: 12px; }
+#batch-counter { color: var(--vscode-descriptionForeground); font-size: 12px; flex: 1; }
+.progress-bar { flex: 1; height: 6px; border-radius: 3px; background: rgba(255,255,255,.08); overflow: hidden; }
+.progress-fill { height: 100%; width: 0%; background: var(--vscode-progressBar-background, #0e639c); transition: width 120ms linear; }
+#progress-text { font-variant-numeric: tabular-nums; font-size: 12px; color: var(--vscode-descriptionForeground); min-width: 64px; text-align: right; }
+
+.check-row.inline { display: inline-flex; align-items: center; gap: 6px; color: var(--vscode-descriptionForeground); font-size: 12px; }
+
+.btn { background: var(--vscode-button-secondaryBackground, rgba(255,255,255,.08)); color: var(--vscode-button-secondaryForeground, var(--vscode-foreground)); border: 0; padding: 4px 10px; border-radius: 3px; cursor: pointer; font: inherit; }
+.btn:hover { background: rgba(255,255,255,.14); }
+.btn.primary { background: var(--vscode-button-background); color: var(--vscode-button-foreground); }
+.btn.primary:disabled { opacity: .5; cursor: not-allowed; }
+.btn.small { padding: 2px 8px; font-size: 12px; }
+
+#batch-panel #panel-sections { flex: 1; overflow-y: auto; }
