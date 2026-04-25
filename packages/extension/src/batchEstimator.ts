@@ -13,17 +13,28 @@ export type EstimateResult =
   | { ok: true; size: number }
   | { ok: false; message: string };
 
-interface CachedEntry {
-  key: string;
-  result: EstimateResult;
-}
-
 function cacheKey(srcPath: string, s: EstimatorSettings): string {
   return `${srcPath}|${s.format}|${s.quality}|${s.lossless ? 1 : 0}`;
 }
 
+/**
+ * Debounced, concurrency-limited size estimator for batch convert previews.
+ *
+ * Call `schedule(srcPath, settings)` to request an estimate. After a short
+ * debounce window the estimator encodes a buffer via sharp (without writing to
+ * disk) and fires `onResult` with the estimated byte size.
+ *
+ * On a cache hit `onResult` fires synchronously inside `schedule()`. On a miss
+ * it fires asynchronously after the debounce delay plus encode time. Callers
+ * must be re-entrant safe with respect to `onResult`.
+ *
+ * Concurrent encodes are limited to `os.cpus().length`. Each unique
+ * (srcPath, format, quality, lossless) tuple gets its own debounce timer and
+ * in-flight slot, so two different-settings encodes for the same source file
+ * may run concurrently — sharp/libvips handles that at the threadpool level.
+ */
 export class BatchEstimator {
-  private readonly cache = new Map<string, CachedEntry>();
+  private readonly cache = new Map<string, EstimateResult>();
   private readonly pending = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly inflight = new Set<string>();
   private readonly queue: Array<{ srcPath: string; settings: EstimatorSettings }> = [];
@@ -49,17 +60,17 @@ export class BatchEstimator {
     const key = cacheKey(srcPath, settings);
     const cached = this.cache.get(key);
     if (cached) {
-      this.onResult(srcPath, cached.result);
+      this.onResult(srcPath, cached);
       return;
     }
-    const existing = this.pending.get(srcPath);
+    const existing = this.pending.get(key);
     if (existing) clearTimeout(existing);
     const timer = setTimeout(() => {
-      this.pending.delete(srcPath);
+      this.pending.delete(key);
       this.queue.push({ srcPath, settings });
       this._drain();
     }, DEBOUNCE_MS);
-    this.pending.set(srcPath, timer);
+    this.pending.set(key, timer);
   }
 
   dispose(): void {
@@ -78,15 +89,16 @@ export class BatchEstimator {
   }
 
   private async _run(srcPath: string, settings: EstimatorSettings): Promise<void> {
-    if (this.inflight.has(srcPath)) { this.active--; this._drain(); return; }
-    this.inflight.add(srcPath);
+    const key = cacheKey(srcPath, settings);
+    if (this.inflight.has(key)) { this.active--; this._drain(); return; }
+    this.inflight.add(key);
     try {
       const result = await this._encode(srcPath, settings);
       if (this.disposed) return;
-      this.cache.set(cacheKey(srcPath, settings), { key: cacheKey(srcPath, settings), result });
+      this.cache.set(key, result);
       this.onResult(srcPath, result);
     } finally {
-      this.inflight.delete(srcPath);
+      this.inflight.delete(key);
       this.active--;
       this._drain();
     }
@@ -103,11 +115,11 @@ export class BatchEstimator {
           case 'avif': pipeline = s.lossless ? pipeline.avif({ lossless: true }) : pipeline.avif({ quality: s.quality }); break;
         }
       } else {
-        const meta = await sharp(srcPath).metadata();
+        const meta = await pipeline.metadata();
         switch (meta.format) {
           case 'jpeg': pipeline = pipeline.jpeg({ quality: s.quality }); break;
-          case 'webp': pipeline = pipeline.webp({ quality: s.quality }); break;
-          case 'avif': pipeline = pipeline.avif({ quality: s.quality }); break;
+          case 'webp': pipeline = s.lossless ? pipeline.webp({ lossless: true }) : pipeline.webp({ quality: s.quality }); break;
+          case 'avif': pipeline = s.lossless ? pipeline.avif({ lossless: true }) : pipeline.avif({ quality: s.quality }); break;
           // png and others fall through unchanged
         }
       }

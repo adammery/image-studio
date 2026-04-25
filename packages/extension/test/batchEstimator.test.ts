@@ -45,4 +45,17 @@ describe('BatchEstimator', () => {
     expect(est.has('/nonexistent.png', settings)).toBe(false);
     est.dispose();
   });
+
+  it('runs concurrent encodes for same path with different settings', async () => {
+    const calls: string[] = [];
+    const est = new BatchEstimator((src, r) => {
+      calls.push(`${src}|${'size' in r && r.ok ? r.size : (r as { ok: false; message: string }).message}`);
+    });
+    est.schedule('/nonexistent.png', { format: 'webp', quality: 80, lossless: false });
+    est.schedule('/nonexistent.png', { format: 'webp', quality: 60, lossless: false });
+    await wait(500);
+    // Both encodes should have produced a callback (each will fail, but each gets reported).
+    expect(calls).toHaveLength(2);
+    est.dispose();
+  });
 });
