@@ -72,7 +72,7 @@ export class BatchEditorProvider implements vscode.CustomReadonlyEditorProvider<
             }
           });
           if (realConflicts.length === 0) {
-            void this._runConvert(panel, msg.selected, msg.settings, msg.trashOriginals, 'overwrite');
+            void this._runConvert(panel, msg.selected, msg.settings, msg.trashOriginals, 0);
             return;
           }
           const list = realConflicts.slice(0, 5).map((c) => `• ${path.basename(c.dst)}`).join('\n');
@@ -88,7 +88,8 @@ export class BatchEditorProvider implements vscode.CustomReadonlyEditorProvider<
           // For 'skip', drop only the REAL conflicts (overwrite-in-place files keep going)
           const conflictSrcs = new Set(realConflicts.map((c) => c.src));
           const work = policy === 'skip' ? msg.selected.filter((s) => !conflictSrcs.has(s)) : msg.selected;
-          void this._runConvert(panel, work, msg.settings, msg.trashOriginals, 'overwrite');
+          const skipped = msg.selected.length - work.length;
+          void this._runConvert(panel, work, msg.settings, msg.trashOriginals, skipped);
           break;
         }
         case 'convertCancel': {
@@ -112,9 +113,9 @@ export class BatchEditorProvider implements vscode.CustomReadonlyEditorProvider<
     work: string[],
     settings: { format: TargetFormat; quality: number; lossless: boolean },
     trashOriginals: boolean,
-    _conflictPolicy: 'skip' | 'overwrite',
+    skipped: number,
   ): Promise<void> {
-    postToBatchWebview(panel, { type: 'convertStarted', total: work.length });
+    postToBatchWebview(panel, { type: 'convertStarted' });
     const token = { cancelled: false };
     this.cancelTokens.set(panel, token);
 
@@ -138,6 +139,8 @@ export class BatchEditorProvider implements vscode.CustomReadonlyEditorProvider<
           lossless: settings.lossless,
         };
         await applyEdits(src, dst, state, { overwrite: true });
+        // Trash externally (not via state.trashOriginal) so a trash failure doesn't
+        // abort the batch; treat it as best-effort and keep going.
         if (trashOriginals && dst !== src) {
           try { await trashFn(src); } catch { /* trash failures are non-fatal */ }
         }
@@ -159,9 +162,9 @@ export class BatchEditorProvider implements vscode.CustomReadonlyEditorProvider<
     }
 
     this.cancelTokens.delete(panel);
-    postToBatchWebview(panel, { type: 'convertDone', converted, failed, skipped: 0 });
+    postToBatchWebview(panel, { type: 'convertDone', converted, failed, skipped });
     vscode.window.showInformationMessage(
-      `Batch convert: ${converted} converted${failed ? `, ${failed} failed` : ''}`,
+      `Batch convert: ${converted} converted${failed ? `, ${failed} failed` : ''}${skipped ? `, ${skipped} skipped` : ''}`,
     );
   }
 }

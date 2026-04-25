@@ -373,14 +373,13 @@ window.addEventListener('message', (event) => {
       break;
     }
     case 'convertStarted': {
-      const m = msg as { total: number };
-      void m.total;
       converting = true;
       document.getElementById('batch-footer-progress')!.classList.remove('hidden');
       document.getElementById('batch-footer-actions')!.classList.add('hidden');
       rowStatus.clear();
       for (const fs of selected) rowStatus.set(fs, { status: 'pending' });
       renderList();
+      renderCounter();
       break;
     }
     case 'convertProgress': {
