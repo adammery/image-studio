@@ -72,16 +72,16 @@ document.getElementById('root')!.innerHTML = /* html */ `
     <div id="batch-footer">
       <div id="batch-footer-info">
         <span id="batch-counter">0 selected</span>
-        <button class="btn small" id="btn-review">Review</button>
+        <button class="bbtn small" id="btn-review">Review</button>
         <label class="check-row inline"><input type="checkbox" id="trash-check"> Trash originals</label>
       </div>
       <div id="batch-footer-progress" class="hidden">
         <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
         <span id="progress-text">0/0</span>
-        <button class="btn small" id="btn-cancel">Cancel</button>
+        <button class="bbtn small" id="btn-cancel">Cancel</button>
       </div>
       <div id="batch-footer-actions">
-        <button class="btn primary" id="btn-convert" disabled>Convert 0</button>
+        <button class="bbtn primary" id="btn-convert" disabled>Convert 0</button>
       </div>
     </div>
   </div>

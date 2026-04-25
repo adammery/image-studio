@@ -45,10 +45,10 @@ html, body { height: 100%; margin: 0; padding: 0; color: var(--vscode-foreground
 
 .check-row.inline { display: inline-flex; align-items: center; gap: 6px; color: var(--vscode-descriptionForeground); font-size: 12px; }
 
-.btn { background: var(--vscode-button-secondaryBackground, rgba(255,255,255,.08)); color: var(--vscode-button-secondaryForeground, var(--vscode-foreground)); border: 0; padding: 4px 10px; border-radius: 3px; cursor: pointer; font: inherit; }
-.btn:hover { background: rgba(255,255,255,.14); }
-.btn.primary { background: var(--vscode-button-background); color: var(--vscode-button-foreground); }
-.btn.primary:disabled { opacity: .5; cursor: not-allowed; }
-.btn.small { padding: 2px 8px; font-size: 12px; }
+.bbtn { background: var(--vscode-button-secondaryBackground, rgba(255,255,255,.08)); color: var(--vscode-button-secondaryForeground, var(--vscode-foreground)); border: 0; padding: 4px 10px; border-radius: 3px; cursor: pointer; font: inherit; }
+.bbtn:hover { background: rgba(255,255,255,.14); }
+.bbtn.primary { background: var(--vscode-button-background); color: var(--vscode-button-foreground); }
+.bbtn.primary:disabled { opacity: .5; cursor: not-allowed; }
+.bbtn.small { padding: 2px 8px; font-size: 12px; }
 
 #batch-panel #panel-sections { flex: 1; overflow-y: auto; }
