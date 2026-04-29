@@ -118,3 +118,45 @@ Run before each merge. Launch via **fn+F5** (or **Run → Start Debugging**) wit
 - [ ] Add an image to a watched folder while batch view is open → the row appears.
 - [ ] Delete an image from disk while it's selected in batch view → the row disappears, selection counter updates.
 - [ ] Run a batch on a single WebP source with format=Same as source and quality lowered → file size decreases (overwrite-in-place).
+
+## Batch Convert — Select All & Delete
+
+### Header checkbox (tri-state)
+- [ ] Open Batch Convert. Header row shows an unchecked checkbox in the leftmost cell.
+- [ ] No selection → header checkbox is unchecked.
+- [ ] Tick one row → header checkbox shows indeterminate (`-` filled state).
+- [ ] Tick every visible row → header checkbox becomes fully checked.
+- [ ] Click header checkbox while fully checked → all visible rows are deselected; counter goes to "0 selected".
+- [ ] Click header checkbox while none selected → all currently visible rows become selected; counter updates with folder count if multiple.
+- [ ] With format chip = PNG → only PNG rows are visible. Click header checkbox → only PNG rows are added to selection. Switch chip back to "All" → previously selected non-PNGs (if any) are still selected.
+- [ ] After bulk select, ~1 s later "(working…)" in the Est. column resolves to byte counts.
+
+### Cmd/Ctrl+A
+- [ ] Focus inside the batch view (click anywhere outside an input). `Cmd+A` (macOS) / `Ctrl+A` (Win/Linux) selects all visible rows.
+- [ ] Pressing the same shortcut again deselects them.
+- [ ] Native "select all text" does NOT fire (no blue text selection in the panel).
+- [ ] Click into the Quality slider's text input next to it (or any `<input>`/`<select>`); `Cmd+A` does NOT touch the selection.
+
+### Trash button
+- [ ] Footer shows a 🗑 button at the left of "X selected". It is disabled when nothing is selected.
+- [ ] Hover tooltip reads "Delete selected (⌘⌫)".
+- [ ] Select 2 rows. Click 🗑. Both files move to OS Trash. Toast: "Moved 2 files to Trash". Rows disappear from the list within ~1 s (file watcher).
+- [ ] Select 1 row. Click 🗑. Toast says "Moved 1 file to Trash" (singular).
+- [ ] Selection counter goes back to "0 selected" after a successful trash.
+
+### Keyboard shortcuts (delete)
+- [ ] macOS: `Cmd+Backspace` with rows selected → same as clicking 🗑.
+- [ ] Win/Linux: `Ctrl+Backspace` and `Delete` (forward-delete key) → same.
+- [ ] Naked `Backspace` does NOT trigger delete.
+- [ ] Pressing the shortcut while typing in any input field does not delete anything.
+- [ ] Shortcut with no selection is a no-op (nothing happens, no toast).
+
+### Disabled during conversion
+- [ ] Start a long batch convert. While it runs:
+  - [ ] 🗑 button is disabled.
+  - [ ] `Cmd+Backspace` / `Delete` are no-ops.
+- [ ] After convert finishes (or is cancelled), the button re-enables provided some rows are still selected.
+
+### Race / failure
+- [ ] Select a file, then delete the same file from Finder/Explorer. Click 🗑 in the batch view. Warning toast: "Failed to trash 1 file: <name>". The row is removed by the file watcher anyway.
+- [ ] Select 3 files where 1 is locked or already-gone. Toast: "Moved 2 files to Trash" plus warning toast for the failure. The failed path stays in selection.

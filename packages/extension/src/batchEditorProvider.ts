@@ -17,6 +17,7 @@ export class BatchEditorProvider implements vscode.CustomReadonlyEditorProvider<
 
   private readonly estimators = new Map<vscode.WebviewPanel, BatchEstimator>();
   private readonly cancelTokens = new Map<vscode.WebviewPanel, { cancelled: boolean }>();
+  private readonly knownPaths = new WeakMap<vscode.WebviewPanel, Set<string>>();
 
   constructor(private readonly context: vscode.ExtensionContext) {}
 
@@ -47,6 +48,7 @@ export class BatchEditorProvider implements vscode.CustomReadonlyEditorProvider<
     const reScan = async () => {
       try {
         const scan = await scanWorkspaceImages();
+        this.knownPaths.set(panel, new Set(scan.images.map((i) => i.fsPath)));
         postToBatchWebview(panel, { type: 'init', folders: scan.folders, images: scan.images });
       } catch { /* ignore */ }
     };
@@ -116,11 +118,48 @@ export class BatchEditorProvider implements vscode.CustomReadonlyEditorProvider<
           if (token) token.cancelled = true;
           break;
         }
+        case 'deleteRequest': {
+          const known = this.knownPaths.get(panel) ?? new Set<string>();
+          const trashFn = await import('trash').then((m) => m.default);
+          const trashed: string[] = [];
+          const failed: { path: string; error: string }[] = [];
+          for (const p of msg.paths) {
+            if (!path.isAbsolute(p)) {
+              failed.push({ path: p, error: 'not an absolute path' });
+              continue;
+            }
+            if (!known.has(p)) {
+              failed.push({ path: p, error: 'not in current image list' });
+              continue;
+            }
+            try {
+              await trashFn(p);
+              trashed.push(p);
+            } catch (err) {
+              failed.push({ path: p, error: (err as Error).message });
+            }
+          }
+          postToBatchWebview(panel, { type: 'deleteDone', trashed, failed });
+          if (trashed.length > 0) {
+            void vscode.window.showInformationMessage(
+              `Moved ${trashed.length} file${trashed.length === 1 ? '' : 's'} to Trash`,
+            );
+          }
+          if (failed.length > 0) {
+            const names = failed.slice(0, 5).map((f) => path.basename(f.path)).join(', ');
+            const more = failed.length > 5 ? ` (+${failed.length - 5} more)` : '';
+            void vscode.window.showWarningMessage(
+              `Failed to trash ${failed.length} file${failed.length === 1 ? '' : 's'}: ${names}${more}`,
+            );
+          }
+          break;
+        }
       }
     });
 
     try {
       const scan = await scanWorkspaceImages();
+      this.knownPaths.set(panel, new Set(scan.images.map((i) => i.fsPath)));
       postToBatchWebview(panel, { type: 'init', folders: scan.folders, images: scan.images });
     } catch (err) {
       postToBatchWebview(panel, { type: 'showError', message: (err as Error).message });

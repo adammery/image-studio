@@ -1,7 +1,8 @@
 html, body { height: 100%; margin: 0; padding: 0; color: var(--vscode-foreground); background: var(--vscode-editor-background); font-family: var(--vscode-font-family); font-size: 13px; }
 #root, #batch-main { height: 100%; }
 
-#batch-main { display: grid; grid-template-columns: 1fr 320px; height: 100%; }
+#batch-main { display: grid; grid-template-columns: 1fr 320px; height: 100%; user-select: none; }
+#batch-main input, #batch-main select, #batch-main textarea { user-select: auto; }
 #batch-list-area { display: flex; flex-direction: column; min-width: 0; border-right: 1px solid var(--vscode-panel-border, rgba(255,255,255,.08)); }
 #batch-panel { display: flex; flex-direction: column; min-width: 0; }
 
@@ -23,7 +24,7 @@ html, body { height: 100%; margin: 0; padding: 0; color: var(--vscode-foreground
 .sort-desc::after { content: ' ▾'; }
 
 #batch-list { flex: 1; overflow-y: auto; }
-.batch-row { font-size: 13px; cursor: default; }
+.batch-row { font-size: 13px; cursor: pointer; }
 .batch-row:hover { background: rgba(255,255,255,.03); }
 .batch-row input[type=checkbox] { margin: 0; }
 .batch-row .bl-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -50,5 +51,7 @@ html, body { height: 100%; margin: 0; padding: 0; color: var(--vscode-foreground
 .bbtn.primary { background: var(--vscode-button-background); color: var(--vscode-button-foreground); }
 .bbtn.primary:disabled { opacity: .5; cursor: not-allowed; }
 .bbtn.small { padding: 2px 8px; font-size: 12px; }
+.bbtn:disabled { opacity: .4; cursor: not-allowed; }
+#btn-delete { margin-left: auto; }
 
 #batch-panel #panel-sections { flex: 1; overflow-y: auto; }

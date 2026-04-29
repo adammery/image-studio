@@ -25,10 +25,11 @@ document.getElementById('root')!.innerHTML = /* html */ `
           <button class="chip" data-fmt="webp">WebP</button>
           <button class="chip" data-fmt="avif">AVIF</button>
         </div>
+        <button class="bbtn small" id="btn-delete" title="Delete selected (⌘⌫)" disabled>Delete</button>
       </div>
     </div>
     <div id="batch-list-header">
-      <div class="bl-cb"></div>
+      <div class="bl-cb"><input type="checkbox" id="header-cb" aria-label="Select all visible"></div>
       <div class="bl-stat"></div>
       <div class="bl-name sortable" data-sort="name">Name</div>
       <div class="bl-fmt sortable" data-sort="format">Format</div>
@@ -174,6 +175,24 @@ function statusIcon(s: 'pending' | 'in-progress' | 'done' | 'failed' | undefined
   }
 }
 
+function headerCheckboxState(): 'none' | 'some' | 'all' {
+  const visible = visibleImages();
+  if (visible.length === 0) return 'none';
+  let count = 0;
+  for (const r of visible) if (selected.has(r.fsPath)) count++;
+  if (count === 0) return 'none';
+  if (count === visible.length) return 'all';
+  return 'some';
+}
+
+function syncHeaderCheckbox(): void {
+  const cb = document.getElementById('header-cb') as HTMLInputElement | null;
+  if (!cb) return;
+  const state = headerCheckboxState();
+  cb.checked = state === 'all';
+  cb.indeterminate = state === 'some';
+}
+
 function renderList(): void {
   const list = document.getElementById('batch-list') as HTMLDivElement;
   const empty = document.getElementById('batch-empty') as HTMLDivElement;
@@ -183,6 +202,7 @@ function renderList(): void {
     list.innerHTML = '';
     empty.classList.remove('hidden');
     list.scrollTop = scrollTop;
+    syncHeaderCheckbox();
     return;
   }
   empty.classList.add('hidden');
@@ -207,6 +227,7 @@ function renderList(): void {
     </div>`;
   }).join('');
   list.scrollTop = scrollTop;
+  syncHeaderCheckbox();
 }
 
 function escapeHtml(s: string): string {
@@ -233,6 +254,8 @@ function renderCounter(): void {
   const btn = document.getElementById('btn-convert') as HTMLButtonElement;
   btn.textContent = `Convert ${n}`;
   btn.disabled = n === 0 || converting;
+  const delBtn = document.getElementById('btn-delete') as HTMLButtonElement;
+  delBtn.disabled = n === 0 || converting;
 }
 
 function renderSortHeader(): void {
@@ -275,6 +298,33 @@ document.getElementById('batch-list-header')!.addEventListener('click', (e) => {
   renderList();
 });
 
+function toggleSelectAllVisible(): void {
+  const state = headerCheckboxState();
+  const visible = visibleImages();
+  const newPaths: string[] = [];
+  if (state === 'all') {
+    for (const r of visible) selected.delete(r.fsPath);
+    for (const r of visible) estimates.delete(r.fsPath);
+  } else {
+    for (const r of visible) {
+      if (!selected.has(r.fsPath)) {
+        selected.add(r.fsPath);
+        newPaths.push(r.fsPath);
+      }
+    }
+  }
+  if (newPaths.length > 0) {
+    vscode.postMessage({ type: 'estimateRequest', srcPaths: newPaths, settings: currentSettings() });
+  }
+  renderCounter();
+  renderList();
+}
+
+document.getElementById('header-cb')!.addEventListener('change', (e) => {
+  e.stopPropagation();
+  toggleSelectAllVisible();
+});
+
 document.getElementById('batch-list')!.addEventListener('change', (e) => {
   const cb = e.target as HTMLInputElement;
   if (cb.tagName !== 'INPUT' || cb.type !== 'checkbox') return;
@@ -283,6 +333,24 @@ document.getElementById('batch-list')!.addEventListener('change', (e) => {
   if (cb.checked) selected.add(fs);
   else { selected.delete(fs); estimates.delete(fs); }
   if (cb.checked) {
+    vscode.postMessage({ type: 'estimateRequest', srcPaths: [fs], settings: currentSettings() });
+  }
+  renderCounter();
+  renderList();
+});
+
+document.getElementById('batch-list')!.addEventListener('click', (e) => {
+  const tgt = e.target as HTMLElement;
+  // Clicks on the checkbox toggle via the native `change` event already.
+  if (tgt.tagName === 'INPUT') return;
+  const row = tgt.closest('.batch-row') as HTMLElement | null;
+  if (!row) return;
+  const fs = row.dataset.fs!;
+  if (selected.has(fs)) {
+    selected.delete(fs);
+    estimates.delete(fs);
+  } else {
+    selected.add(fs);
     vscode.postMessage({ type: 'estimateRequest', srcPaths: [fs], settings: currentSettings() });
   }
   renderCounter();
@@ -352,6 +420,13 @@ document.getElementById('btn-cancel')!.addEventListener('click', () => {
   vscode.postMessage({ type: 'convertCancel' });
 });
 
+function requestDelete(): void {
+  if (selected.size === 0 || converting) return;
+  vscode.postMessage({ type: 'deleteRequest', paths: [...selected] });
+}
+
+document.getElementById('btn-delete')!.addEventListener('click', requestDelete);
+
 window.addEventListener('message', (event) => {
   const msg = event.data as { type: string; [k: string]: unknown };
   switch (msg.type) {
@@ -407,10 +482,47 @@ window.addEventListener('message', (event) => {
       renderCounter();
       break;
     }
+    case 'deleteDone': {
+      const trashed = msg.trashed as string[];
+      // failed paths intentionally retained in `selected` so a retry is one keystroke away.
+      for (const p of trashed) {
+        selected.delete(p);
+        estimates.delete(p);
+        rowStatus.delete(p);
+      }
+      renderList();
+      renderCounter();
+      break;
+    }
     case 'showError': {
       const list = document.getElementById('batch-list') as HTMLDivElement;
       list.innerHTML = `<div class="empty">${escapeHtml(msg.message as string)}</div>`;
       break;
     }
+  }
+});
+
+document.addEventListener('keydown', (e) => {
+  const tgt = e.target as HTMLElement | null;
+  const tag = tgt?.tagName;
+  if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+
+  if ((e.metaKey || e.ctrlKey) && (e.key === 'a' || e.key === 'A')) {
+    e.preventDefault();
+    window.getSelection()?.removeAllRanges();
+    toggleSelectAllVisible();
+    return;
+  }
+
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Backspace') {
+    e.preventDefault();
+    requestDelete();
+    return;
+  }
+
+  if (e.key === 'Delete') {
+    e.preventDefault();
+    requestDelete();
+    return;
   }
 });

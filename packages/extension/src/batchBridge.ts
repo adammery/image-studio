@@ -10,6 +10,7 @@ export type BatchExtMessage =
   | { type: 'convertStarted' }
   | { type: 'convertProgress'; srcPath: string; status: ConvertStatus; error?: string; doneCount: number; totalCount: number }
   | { type: 'convertDone'; converted: number; failed: number; skipped: number }
+  | { type: 'deleteDone'; trashed: string[]; failed: { path: string; error: string }[] }
   | { type: 'showError'; message: string };
 
 // NOTE: settings.format must be 'jpeg', never 'jpg' — see EstimatorSettings union.
@@ -18,4 +19,5 @@ export type BatchWvMessage =
   | { type: 'estimateRequest'; srcPaths: string[]; settings: EstimatorSettings }
   | { type: 'estimateInvalidate' }
   | { type: 'preflightRequest'; selected: string[]; settings: EstimatorSettings; trashOriginals: boolean }
-  | { type: 'convertCancel' };
+  | { type: 'convertCancel' }
+  | { type: 'deleteRequest'; paths: string[] };
