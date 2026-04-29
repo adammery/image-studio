@@ -12,7 +12,7 @@ function buildExcludeGlob(): string {
 
 type NodeKind = 'workspace' | 'folder' | 'file';
 
-interface Node {
+export interface Node {
   kind: NodeKind;
   uri: vscode.Uri;
 }
@@ -77,20 +77,31 @@ export class ImageTreeProvider implements vscode.TreeDataProvider<Node> {
       const item = new vscode.TreeItem(node.uri, vscode.TreeItemCollapsibleState.None);
       item.label = path.basename(node.uri.fsPath);
       item.tooltip = node.uri.fsPath;
+      item.contextValue = 'imageFile';
       item.command = {
-        command: 'vscode.openWith',
+        command: 'imageStudio.treeFileActivated',
         title: 'Open in Image Studio',
-        arguments: [node.uri, 'imageStudio.editor'],
+        arguments: [node],
       };
-      // resourceUri set automatically from TreeItem constructor → file icon theme applies
       return item;
     }
     // Folder or workspace node
     const item = new vscode.TreeItem(node.uri, vscode.TreeItemCollapsibleState.Collapsed);
     item.label = path.basename(node.uri.fsPath) || node.uri.fsPath;
     item.tooltip = node.uri.fsPath;
+    item.contextValue = node.kind === 'workspace' ? 'imageWorkspace' : 'imageFolder';
     item.iconPath = new vscode.ThemeIcon(node.kind === 'workspace' ? 'root-folder' : 'folder');
     return item;
+  }
+
+  getParent(node: Node): Node | undefined {
+    if (node.kind === 'workspace') return undefined;
+    const parentPath = path.dirname(node.uri.fsPath);
+    const roots = vscode.workspace.workspaceFolders;
+    if (!roots?.length) return undefined;
+    if (roots.length === 1 && parentPath === roots[0].uri.fsPath) return undefined;
+    const isRoot = roots.some((r) => r.uri.fsPath === parentPath);
+    return { kind: isRoot ? 'workspace' : 'folder', uri: vscode.Uri.file(parentPath) };
   }
 
   refresh(): void {

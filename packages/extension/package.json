@@ -2,9 +2,9 @@
   "name": "image-studio",
   "displayName": "Image Studio",
   "publisher": "adammery",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "private": true,
-  "description": "Crop, resize, and compress images (PNG · JPG · WebP · AVIF) in VSCode — live Before/After preview, bulk converter, and an MCP server so AI assistants (Claude Code, Cursor) can convert images on your disk too.",
+  "description": "Image editor + AI converter for VSCode — crop, resize, compress PNG · JPG · WebP · AVIF with live preview, bulk converter, and MCP server for Claude Code, Cursor, and Claude Desktop.",
   "icon": "media/icon.png",
   "license": "MIT",
   "repository": { "type": "git", "url": "https://github.com/adammery/image-studio" },
@@ -79,6 +79,21 @@
         "title": "Batch Convert…",
         "icon": "$(zap)",
         "category": "Image Studio"
+      },
+      {
+        "command": "imageStudio.renameFile",
+        "title": "Rename",
+        "category": "Image Studio"
+      },
+      {
+        "command": "imageStudio.deleteFile",
+        "title": "Move to Trash",
+        "category": "Image Studio"
+      },
+      {
+        "command": "imageStudio.treeFileActivated",
+        "title": "Open in Image Studio",
+        "category": "Image Studio"
       }
     ],
     "menus": {
@@ -87,6 +102,24 @@
           "command": "imageStudio.openBatchView",
           "when": "view == imageStudio.files",
           "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "imageStudio.treeFileActivated",
+          "when": "false"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "imageStudio.renameFile",
+          "when": "view == imageStudio.files && viewItem == imageFile",
+          "group": "7_modification@1"
+        },
+        {
+          "command": "imageStudio.deleteFile",
+          "when": "view == imageStudio.files && viewItem == imageFile",
+          "group": "7_modification@2"
         }
       ]
     },
@@ -101,6 +134,22 @@
         "key": "ctrl+delete",
         "mac": "cmd+backspace",
         "when": "activeCustomEditorId == 'imageStudio.editor'"
+      },
+      {
+        "command": "imageStudio.renameFile",
+        "key": "enter",
+        "when": "focusedView == 'imageStudio.files' && listFocus && !inputFocus"
+      },
+      {
+        "command": "imageStudio.renameFile",
+        "key": "f2",
+        "when": "focusedView == 'imageStudio.files' && listFocus && !inputFocus"
+      },
+      {
+        "command": "imageStudio.deleteFile",
+        "key": "delete",
+        "mac": "cmd+backspace",
+        "when": "focusedView == 'imageStudio.files' && listFocus && !inputFocus"
       }
     ],
     "configuration": {

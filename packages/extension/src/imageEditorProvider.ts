@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { getImageInfo, defaultEditState, applyEdits } from '@image-studio/core';
+import { getImageInfo, defaultEditState, applyEdits, CoreError } from '@image-studio/core';
 import type { EditState } from '@image-studio/core';
 import { getWebviewContent, postToWebview } from './webviewContent.js';
 import type { WvMessage } from './bridge.js';
@@ -203,20 +203,44 @@ export class ImageEditorProvider implements vscode.CustomEditorProvider<ImageDoc
 
     try {
       const result = await applyEdits(srcPath, dstPath, state, { overwrite: dstPath === srcPath });
-
-      const freshState = defaultEditState();
-      this.editStates.set(document.uri.toString(), freshState);
-
-      const panels = this._panelsForDocument.get(document.uri.toString());
-      panels?.forEach((p) =>
-        postToWebview(p, { type: 'saveComplete', trashed: result.originalTrashed }),
-      );
-
-      if (dstPath !== srcPath) {
-        await vscode.commands.executeCommand('vscode.openWith', vscode.Uri.file(dstPath), ImageEditorProvider.viewType);
-      }
+      this._onSaveSuccess(document, dstPath, srcPath, result);
     } catch (err) {
+      if (err instanceof CoreError && err.code === 'OutputExists') {
+        const pick = await vscode.window.showWarningMessage(
+          `${path.basename(dstPath)} already exists.`,
+          { modal: true },
+          'Overwrite',
+        );
+        if (pick === 'Overwrite') {
+          try {
+            const result = await applyEdits(srcPath, dstPath, state, { overwrite: true });
+            this._onSaveSuccess(document, dstPath, srcPath, result);
+          } catch (retryErr) {
+            vscode.window.showErrorMessage(`Image Studio save failed: ${(retryErr as Error).message}`);
+          }
+        }
+        return;
+      }
       vscode.window.showErrorMessage(`Image Studio save failed: ${(err as Error).message}`);
+    }
+  }
+
+  private async _onSaveSuccess(
+    document: ImageDocument,
+    dstPath: string,
+    srcPath: string,
+    result: { originalTrashed: boolean },
+  ): Promise<void> {
+    const freshState = defaultEditState();
+    this.editStates.set(document.uri.toString(), freshState);
+
+    const panels = this._panelsForDocument.get(document.uri.toString());
+    panels?.forEach((p) =>
+      postToWebview(p, { type: 'saveComplete', trashed: result.originalTrashed }),
+    );
+
+    if (dstPath !== srcPath) {
+      await vscode.commands.executeCommand('vscode.openWith', vscode.Uri.file(dstPath), ImageEditorProvider.viewType);
     }
   }
 }

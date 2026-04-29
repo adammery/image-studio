@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'node:path';
 import { ImageEditorProvider } from './imageEditorProvider.js';
-import { ImageTreeProvider } from './imageTreeProvider.js';
+import { ImageTreeProvider, type Node } from './imageTreeProvider.js';
 import { BatchEditorProvider } from './batchEditorProvider.js';
 
 export function activate(context: vscode.ExtensionContext): void {
@@ -41,12 +41,39 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // Activity Bar view: list of images in the workspace
   const treeProvider = new ImageTreeProvider();
+  const treeView = vscode.window.createTreeView('imageStudio.files', {
+    treeDataProvider: treeProvider,
+    showCollapseAll: false,
+  });
+  context.subscriptions.push(treeView);
+
+  // Track focused file in tree — click opens, Enter renames (Finder-style)
+  let activeFileNode: Node | undefined;
+  let suppressOpen = false;
+
   context.subscriptions.push(
-    vscode.window.createTreeView('imageStudio.files', {
-      treeDataProvider: treeProvider,
-      showCollapseAll: false,
+    vscode.commands.registerCommand('imageStudio.treeFileActivated', async (node: Node) => {
+      activeFileNode = node;
+      if (suppressOpen) return;
+      await vscode.commands.executeCommand('vscode.openWith', node.uri, 'imageStudio.editor');
+      await treeView.reveal(node, { focus: true, select: true });
     }),
   );
+
+  treeView.onDidChangeSelection((e) => {
+    const node = e.selection[0];
+    if (node?.kind === 'file') activeFileNode = node;
+  });
+
+  async function resolveTreeFocus(): Promise<Node | undefined> {
+    suppressOpen = true;
+    try {
+      await vscode.commands.executeCommand('list.select');
+    } finally {
+      suppressOpen = false;
+    }
+    return activeFileNode?.kind === 'file' ? activeFileNode : undefined;
+  }
 
   // Refresh tree when image files are added / removed / renamed
   const watcher = vscode.workspace.createFileSystemWatcher(
@@ -86,6 +113,60 @@ export function activate(context: vscode.ExtensionContext): void {
         const { default: trash } = await import('trash');
         await trash(uri.fsPath);
         await vscode.window.tabGroups.close(activeTab);
+      } catch (err) {
+        vscode.window.showErrorMessage(`Image Studio: could not delete: ${(err as Error).message}`);
+      }
+    }),
+  );
+
+  // Rename file from sidebar tree (Enter key or context menu)
+  context.subscriptions.push(
+    vscode.commands.registerCommand('imageStudio.renameFile', async (arg?: Node) => {
+      const node = arg ?? await resolveTreeFocus();
+      if (!node || node.kind !== 'file') return;
+      const oldPath = node.uri.fsPath;
+      const dir = path.dirname(oldPath);
+      const oldName = path.basename(oldPath);
+      const ext = path.extname(oldName);
+      const stem = oldName.slice(0, -ext.length);
+
+      const newName = await vscode.window.showInputBox({
+        prompt: 'Rename image',
+        value: stem,
+        valueSelection: [0, stem.length],
+      });
+      if (!newName || newName === stem) return;
+
+      const newPath = path.join(dir, newName + ext);
+      try {
+        await vscode.workspace.fs.rename(
+          vscode.Uri.file(oldPath),
+          vscode.Uri.file(newPath),
+          { overwrite: false },
+        );
+        activeFileNode = { kind: 'file', uri: vscode.Uri.file(newPath) };
+      } catch {
+        vscode.window.showErrorMessage(`Image Studio: could not rename to "${newName + ext}".`);
+      }
+    }),
+  );
+
+  // Delete file from sidebar tree (Del key or context menu)
+  context.subscriptions.push(
+    vscode.commands.registerCommand('imageStudio.deleteFile', async (arg?: Node) => {
+      const node = arg ?? await resolveTreeFocus();
+      if (!node || node.kind !== 'file') return;
+      const name = path.basename(node.uri.fsPath);
+      const choice = await vscode.window.showWarningMessage(
+        `Move "${name}" to Trash?`,
+        { modal: true },
+        'Move to Trash',
+      );
+      if (choice !== 'Move to Trash') return;
+      try {
+        const { default: trash } = await import('trash');
+        await trash(node.uri.fsPath);
+        activeFileNode = undefined;
       } catch (err) {
         vscode.window.showErrorMessage(`Image Studio: could not delete: ${(err as Error).message}`);
       }

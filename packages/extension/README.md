@@ -1,6 +1,6 @@
 # Image Studio
 
-A VSCode image editor with **live Before/After preview** plus a **bulk converter** for whole folders. Open PNG, JPG, WebP, or AVIF files directly in your editor and crop, resize, or compress without leaving VSCode — or let an AI assistant (Claude Code, Cursor, Claude Desktop) do the conversions for you over MCP.
+An image editor + **AI converter** for VSCode. Crop, resize, and compress PNG, JPG, WebP, or AVIF with **live Before/After preview** and a **bulk converter** — or let an AI assistant (Claude Code, Cursor, Claude Desktop) do the conversions for you over MCP.
 
 ![Image Studio editor](https://raw.githubusercontent.com/adammery/image-studio/main/packages/extension/media/demos/editor.gif)
 
@@ -58,6 +58,9 @@ All image operations run through `sharp` inside VSCode's extension host — no c
 | `Cmd+Shift+\\` / `Ctrl+Shift+\\` | Open Image Studio sidebar |
 | `Cmd+S` | Save current image |
 | `Cmd+Backspace` / `Ctrl+Delete` | Move the open image to Trash |
+| `Enter` (in sidebar) | Rename the focused image |
+| `F2` (in sidebar) | Rename the focused image |
+| `Cmd+Backspace` (in sidebar) | Move the focused image to Trash |
 | `Enter` (in crop) | Apply crop |
 | `Esc` (in crop) | Cancel crop |
 | `Ctrl+scroll` | Zoom in/out on the canvas |
