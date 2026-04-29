@@ -794,3 +794,14 @@ window.addEventListener('message', (event) => {
     }
   }
 });
+
+// Suppress browser's native "select all" text selection inside the editor
+// panel; let it through when focus is in a real input.
+document.addEventListener('keydown', (e) => {
+  const tgt = e.target as HTMLElement | null;
+  const tag = tgt?.tagName;
+  if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+  if ((e.metaKey || e.ctrlKey) && (e.key === 'a' || e.key === 'A')) {
+    e.preventDefault();
+  }
+});
