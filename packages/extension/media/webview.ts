@@ -466,7 +466,13 @@ canvasArea.addEventListener('mousedown', (e) => {
   }
 });
 document.addEventListener('mousemove', (e) => { if (!panning) return; panX = e.clientX - panStart.x; panY = e.clientY - panStart.y; applyTransform(); });
-document.addEventListener('mouseup', () => { if (panning) { panning = false; canvasArea.style.cursor = zoom !== 0 ? 'grab' : ''; } });
+document.addEventListener('mouseup', () => {
+  if (panning) {
+    panning = false;
+    canvasArea.style.cursor = zoom !== 0 ? 'grab' : '';
+    cropOverlay.style.cursor = '';
+  }
+});
 
 // Show grab cursor when zoomed in (hint that drag = pan)
 function updateCursor(): void { canvasArea.style.cursor = zoom !== 0 && !cropOverlay.classList.contains('active') ? 'grab' : ''; }
@@ -551,8 +557,8 @@ cropApply.addEventListener('click', applyCropAction);
 cropCancel.addEventListener('click', exitCropMode);
 document.addEventListener('keydown', (e) => {
   if (!cropOverlay.classList.contains('active')) return;
-  if (e.key === 'Escape') exitCropMode();
-  if (e.key === 'Enter')  applyCropAction();
+  if (e.key === 'Escape') { e.preventDefault(); exitCropMode(); }
+  if (e.key === 'Enter')  { e.preventDefault(); applyCropAction(); }
 });
 
 cropOverlay.addEventListener('mousedown', (e) => {
@@ -565,7 +571,13 @@ cropOverlay.addEventListener('mousedown', (e) => {
   const my = (e.clientY - (imgRect.top  - areaRect.top)  - areaRect.top)  / scale;
   if (dir) { cropDragging = { type: 'handle', dir, startX: mx, startY: my, startRect: { ...cropDraft } }; e.preventDefault(); }
   else if (target === cropSelection || target.classList.contains('crop-handle')) { /* handled above */ }
-  else if (cropOverlay.classList.contains('active') && target === cropOverlay) { /* no-op */ }
+  else if (cropOverlay.classList.contains('active') && target === cropOverlay && zoom !== 0) {
+    // Drag on the dimmed overlay outside the selection → pan the image.
+    panning = true;
+    panStart = { x: e.clientX - panX, y: e.clientY - panY };
+    cropOverlay.style.cursor = 'grabbing';
+    e.preventDefault();
+  }
 });
 cropSelection.addEventListener('mousedown', (e) => {
   if ((e.target as HTMLElement).dataset['dir']) return;

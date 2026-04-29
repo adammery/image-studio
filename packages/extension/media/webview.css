@@ -128,7 +128,7 @@ button { cursor: pointer; border: none; background: none; }
 #zoom-fit { border-left: 1px solid var(--border); padding-left: 12px !important; }
 
 /* ── Crop overlay ─────────────────────────────────────────────── */
-#crop-overlay { position: absolute; inset: 0; display: none; cursor: crosshair; }
+#crop-overlay { position: absolute; inset: 0; display: none; cursor: grab; }
 #crop-overlay.active { display: block; }
 #crop-selection {
   position: absolute; border: 2px solid #fff; cursor: move;
