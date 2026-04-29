@@ -18,10 +18,11 @@ document.getElementById("root").innerHTML = /* html */
           <button class="chip" data-fmt="webp">WebP</button>
           <button class="chip" data-fmt="avif">AVIF</button>
         </div>
+        <button class="bbtn small" id="btn-delete" title="Delete selected (\u2318\u232B)" disabled>Delete</button>
       </div>
     </div>
     <div id="batch-list-header">
-      <div class="bl-cb"></div>
+      <div class="bl-cb"><input type="checkbox" id="header-cb" aria-label="Select all visible"></div>
       <div class="bl-stat"></div>
       <div class="bl-name sortable" data-sort="name">Name</div>
       <div class="bl-fmt sortable" data-sort="format">Format</div>
@@ -161,6 +162,22 @@ function statusIcon(s) {
       return "";
   }
 }
+function headerCheckboxState() {
+  const visible = visibleImages();
+  if (visible.length === 0) return "none";
+  let count = 0;
+  for (const r of visible) if (selected.has(r.fsPath)) count++;
+  if (count === 0) return "none";
+  if (count === visible.length) return "all";
+  return "some";
+}
+function syncHeaderCheckbox() {
+  const cb = document.getElementById("header-cb");
+  if (!cb) return;
+  const state = headerCheckboxState();
+  cb.checked = state === "all";
+  cb.indeterminate = state === "some";
+}
 function renderList() {
   const list = document.getElementById("batch-list");
   const empty = document.getElementById("batch-empty");
@@ -170,6 +187,7 @@ function renderList() {
     list.innerHTML = "";
     empty.classList.remove("hidden");
     list.scrollTop = scrollTop;
+    syncHeaderCheckbox();
     return;
   }
   empty.classList.add("hidden");
@@ -194,6 +212,7 @@ function renderList() {
     </div>`;
   }).join("");
   list.scrollTop = scrollTop;
+  syncHeaderCheckbox();
 }
 function escapeHtml(s) {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -217,6 +236,8 @@ function renderCounter() {
   const btn = document.getElementById("btn-convert");
   btn.textContent = `Convert ${n}`;
   btn.disabled = n === 0 || converting;
+  const delBtn = document.getElementById("btn-delete");
+  delBtn.disabled = n === 0 || converting;
 }
 function renderSortHeader() {
   document.querySelectorAll("#batch-list-header .sortable").forEach((el) => {
@@ -255,6 +276,31 @@ document.getElementById("batch-list-header").addEventListener("click", (e) => {
   renderSortHeader();
   renderList();
 });
+function toggleSelectAllVisible() {
+  const state = headerCheckboxState();
+  const visible = visibleImages();
+  const newPaths = [];
+  if (state === "all") {
+    for (const r of visible) selected.delete(r.fsPath);
+    for (const r of visible) estimates.delete(r.fsPath);
+  } else {
+    for (const r of visible) {
+      if (!selected.has(r.fsPath)) {
+        selected.add(r.fsPath);
+        newPaths.push(r.fsPath);
+      }
+    }
+  }
+  if (newPaths.length > 0) {
+    vscode.postMessage({ type: "estimateRequest", srcPaths: newPaths, settings: currentSettings() });
+  }
+  renderCounter();
+  renderList();
+}
+document.getElementById("header-cb").addEventListener("change", (e) => {
+  e.stopPropagation();
+  toggleSelectAllVisible();
+});
 document.getElementById("batch-list").addEventListener("change", (e) => {
   const cb = e.target;
   if (cb.tagName !== "INPUT" || cb.type !== "checkbox") return;
@@ -266,6 +312,22 @@ document.getElementById("batch-list").addEventListener("change", (e) => {
     estimates.delete(fs);
   }
   if (cb.checked) {
+    vscode.postMessage({ type: "estimateRequest", srcPaths: [fs], settings: currentSettings() });
+  }
+  renderCounter();
+  renderList();
+});
+document.getElementById("batch-list").addEventListener("click", (e) => {
+  const tgt = e.target;
+  if (tgt.tagName === "INPUT") return;
+  const row = tgt.closest(".batch-row");
+  if (!row) return;
+  const fs = row.dataset.fs;
+  if (selected.has(fs)) {
+    selected.delete(fs);
+    estimates.delete(fs);
+  } else {
+    selected.add(fs);
     vscode.postMessage({ type: "estimateRequest", srcPaths: [fs], settings: currentSettings() });
   }
   renderCounter();
@@ -328,6 +390,11 @@ document.getElementById("btn-convert").addEventListener("click", () => {
 document.getElementById("btn-cancel").addEventListener("click", () => {
   vscode.postMessage({ type: "convertCancel" });
 });
+function requestDelete() {
+  if (selected.size === 0 || converting) return;
+  vscode.postMessage({ type: "deleteRequest", paths: [...selected] });
+}
+document.getElementById("btn-delete").addEventListener("click", requestDelete);
 window.addEventListener("message", (event) => {
   const msg = event.data;
   switch (msg.type) {
@@ -380,11 +447,43 @@ window.addEventListener("message", (event) => {
       renderCounter();
       break;
     }
+    case "deleteDone": {
+      const trashed = msg.trashed;
+      for (const p of trashed) {
+        selected.delete(p);
+        estimates.delete(p);
+        rowStatus.delete(p);
+      }
+      renderList();
+      renderCounter();
+      break;
+    }
     case "showError": {
       const list = document.getElementById("batch-list");
       list.innerHTML = `<div class="empty">${escapeHtml(msg.message)}</div>`;
       break;
     }
+  }
+});
+document.addEventListener("keydown", (e) => {
+  const tgt = e.target;
+  const tag = tgt?.tagName;
+  if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") return;
+  if ((e.metaKey || e.ctrlKey) && (e.key === "a" || e.key === "A")) {
+    e.preventDefault();
+    window.getSelection()?.removeAllRanges();
+    toggleSelectAllVisible();
+    return;
+  }
+  if ((e.metaKey || e.ctrlKey) && e.key === "Backspace") {
+    e.preventDefault();
+    requestDelete();
+    return;
+  }
+  if (e.key === "Delete") {
+    e.preventDefault();
+    requestDelete();
+    return;
   }
 });
 //# sourceMappingURL=batch.js.map

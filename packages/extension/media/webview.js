@@ -429,6 +429,7 @@ document.addEventListener("mouseup", () => {
   if (panning) {
     panning = false;
     canvasArea.style.cursor = zoom !== 0 ? "grab" : "";
+    cropOverlay.style.cursor = "";
   }
 });
 function updateCursor() {
@@ -502,8 +503,14 @@ cropApply.addEventListener("click", applyCropAction);
 cropCancel.addEventListener("click", exitCropMode);
 document.addEventListener("keydown", (e) => {
   if (!cropOverlay.classList.contains("active")) return;
-  if (e.key === "Escape") exitCropMode();
-  if (e.key === "Enter") applyCropAction();
+  if (e.key === "Escape") {
+    e.preventDefault();
+    exitCropMode();
+  }
+  if (e.key === "Enter") {
+    e.preventDefault();
+    applyCropAction();
+  }
 });
 cropOverlay.addEventListener("mousedown", (e) => {
   const target = e.target;
@@ -517,7 +524,11 @@ cropOverlay.addEventListener("mousedown", (e) => {
     cropDragging = { type: "handle", dir, startX: mx, startY: my, startRect: { ...cropDraft } };
     e.preventDefault();
   } else if (target === cropSelection || target.classList.contains("crop-handle")) {
-  } else if (cropOverlay.classList.contains("active") && target === cropOverlay) {
+  } else if (cropOverlay.classList.contains("active") && target === cropOverlay && zoom !== 0) {
+    panning = true;
+    panStart = { x: e.clientX - panX, y: e.clientY - panY };
+    cropOverlay.style.cursor = "grabbing";
+    e.preventDefault();
   }
 });
 cropSelection.addEventListener("mousedown", (e) => {
@@ -755,6 +766,14 @@ window.addEventListener("message", (event) => {
       syncPresetButtons(92);
       break;
     }
+  }
+});
+document.addEventListener("keydown", (e) => {
+  const tgt = e.target;
+  const tag = tgt?.tagName;
+  if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") return;
+  if ((e.metaKey || e.ctrlKey) && (e.key === "a" || e.key === "A")) {
+    e.preventDefault();
   }
 });
 //# sourceMappingURL=webview.js.map
