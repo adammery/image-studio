@@ -147,12 +147,23 @@ export function activate(context: vscode.ExtensionContext): void {
 
       const newName = await vscode.window.showInputBox({
         prompt: 'Rename image',
-        value: stem,
+        value: oldName,
         valueSelection: [0, stem.length],
+        validateInput: (input) => {
+          const trimmed = input.trim();
+          if (!trimmed) return 'Name cannot be empty.';
+          const inputExt = path.extname(trimmed).toLowerCase();
+          if (inputExt && inputExt !== ext.toLowerCase()) {
+            return `Extension must remain ${ext}. To change format, use the Image Studio editor.`;
+          }
+          return null;
+        },
       });
-      if (!newName || newName === stem) return;
+      if (!newName || newName === oldName) return;
 
-      const newPath = path.join(dir, newName + ext);
+      const inputExt = path.extname(newName);
+      const finalName = inputExt ? newName : newName + ext;
+      const newPath = path.join(dir, finalName);
       try {
         await vscode.workspace.fs.rename(
           vscode.Uri.file(oldPath),
