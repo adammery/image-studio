@@ -91,6 +91,21 @@
         "category": "Image Studio"
       },
       {
+        "command": "imageStudio.copyFile",
+        "title": "Copy",
+        "category": "Image Studio"
+      },
+      {
+        "command": "imageStudio.cutFile",
+        "title": "Cut",
+        "category": "Image Studio"
+      },
+      {
+        "command": "imageStudio.pasteFile",
+        "title": "Paste",
+        "category": "Image Studio"
+      },
+      {
         "command": "imageStudio.treeFileActivated",
         "title": "Open in Image Studio",
         "category": "Image Studio"
@@ -111,6 +126,21 @@
         }
       ],
       "view/item/context": [
+        {
+          "command": "imageStudio.copyFile",
+          "when": "view == imageStudio.files && viewItem == imageFile",
+          "group": "5_cutcopypaste@1"
+        },
+        {
+          "command": "imageStudio.cutFile",
+          "when": "view == imageStudio.files && viewItem == imageFile",
+          "group": "5_cutcopypaste@2"
+        },
+        {
+          "command": "imageStudio.pasteFile",
+          "when": "view == imageStudio.files && (viewItem == imageFile || viewItem == imageFolder || viewItem == imageWorkspace)",
+          "group": "5_cutcopypaste@3"
+        },
         {
           "command": "imageStudio.renameFile",
           "when": "view == imageStudio.files && viewItem == imageFile",
@@ -149,6 +179,24 @@
         "command": "imageStudio.deleteFile",
         "key": "delete",
         "mac": "cmd+backspace",
+        "when": "focusedView == 'imageStudio.files' && listFocus && !inputFocus"
+      },
+      {
+        "command": "imageStudio.copyFile",
+        "key": "ctrl+c",
+        "mac": "cmd+c",
+        "when": "focusedView == 'imageStudio.files' && listFocus && !inputFocus"
+      },
+      {
+        "command": "imageStudio.cutFile",
+        "key": "ctrl+x",
+        "mac": "cmd+x",
+        "when": "focusedView == 'imageStudio.files' && listFocus && !inputFocus"
+      },
+      {
+        "command": "imageStudio.pasteFile",
+        "key": "ctrl+v",
+        "mac": "cmd+v",
         "when": "focusedView == 'imageStudio.files' && listFocus && !inputFocus"
       }
     ],

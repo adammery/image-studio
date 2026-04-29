@@ -1,8 +1,23 @@
 import * as vscode from 'vscode';
 import * as path from 'node:path';
+import * as fs from 'node:fs';
 import { ImageEditorProvider } from './imageEditorProvider.js';
 import { ImageTreeProvider, type Node } from './imageTreeProvider.js';
 import { BatchEditorProvider } from './batchEditorProvider.js';
+
+let sidebarClipboard: { op: 'copy' | 'cut'; uri: vscode.Uri } | null = null;
+
+function uniquePath(dir: string, base: string): string {
+  let candidate = path.join(dir, base);
+  if (!fs.existsSync(candidate)) return candidate;
+  const ext = path.extname(base);
+  const stem = base.slice(0, base.length - ext.length);
+  for (let i = 1; i < 1000; i++) {
+    candidate = path.join(dir, `${stem} (${i})${ext}`);
+    if (!fs.existsSync(candidate)) return candidate;
+  }
+  throw new Error('Too many duplicate filenames');
+}
 
 export function activate(context: vscode.ExtensionContext): void {
   const editorProvider = new ImageEditorProvider(context);
@@ -147,6 +162,60 @@ export function activate(context: vscode.ExtensionContext): void {
         activeFileNode = { kind: 'file', uri: vscode.Uri.file(newPath) };
       } catch {
         vscode.window.showErrorMessage(`Image Studio: could not rename to "${newName + ext}".`);
+      }
+    }),
+  );
+
+  // Copy/Cut/Paste in the sidebar tree
+  context.subscriptions.push(
+    vscode.commands.registerCommand('imageStudio.copyFile', async (arg?: Node) => {
+      const node = arg ?? await resolveTreeFocus();
+      if (!node || node.kind !== 'file') return;
+      sidebarClipboard = { op: 'copy', uri: node.uri };
+      vscode.window.setStatusBarMessage(`Image Studio: copied ${path.basename(node.uri.fsPath)}`, 2000);
+    }),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('imageStudio.cutFile', async (arg?: Node) => {
+      const node = arg ?? await resolveTreeFocus();
+      if (!node || node.kind !== 'file') return;
+      sidebarClipboard = { op: 'cut', uri: node.uri };
+      vscode.window.setStatusBarMessage(`Image Studio: cut ${path.basename(node.uri.fsPath)}`, 2000);
+    }),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('imageStudio.pasteFile', async (arg?: Node) => {
+      if (!sidebarClipboard) return;
+      const target = arg ?? treeView.selection[0] ?? activeFileNode;
+      let targetDir: string;
+      if (!target) {
+        const root = vscode.workspace.workspaceFolders?.[0];
+        if (!root) return;
+        targetDir = root.uri.fsPath;
+      } else if (target.kind === 'folder' || target.kind === 'workspace') {
+        targetDir = target.uri.fsPath;
+      } else {
+        targetDir = path.dirname(target.uri.fsPath);
+      }
+      const srcPath = sidebarClipboard.uri.fsPath;
+      if (!fs.existsSync(srcPath)) {
+        vscode.window.showErrorMessage('Image Studio: source file no longer exists.');
+        sidebarClipboard = null;
+        return;
+      }
+      const dstPath = uniquePath(targetDir, path.basename(srcPath));
+      try {
+        if (sidebarClipboard.op === 'copy') {
+          await fs.promises.copyFile(srcPath, dstPath);
+        } else {
+          await fs.promises.rename(srcPath, dstPath);
+          sidebarClipboard = null;
+        }
+        treeProvider.refresh();
+      } catch (err) {
+        vscode.window.showErrorMessage(`Image Studio: paste failed: ${(err as Error).message}`);
       }
     }),
   );
