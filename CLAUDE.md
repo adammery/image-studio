@@ -62,7 +62,7 @@ image-studio/
 │       └── plans/    implementation plans (task-by-task TDD)
 ├── package.json      workspaces root
 ├── tsconfig.base.json
-└── .nvmrc            Node 20 LTS
+└── .nvmrc            Node 22 LTS
 ```
 
 **Pravidlá hraníc:**
@@ -128,7 +128,7 @@ Vynucované v `packages/mcp-server/src/validation.ts`:
 ## Development workflow
 
 ```bash
-nvm use                          # Node 20 (from .nvmrc)
+nvm use                          # Node 22 (from .nvmrc)
 npm install                      # installs all workspace packages
 npm run dev                      # watch mode (core + mcp-server — extension má vlastný)
 npm test                         # run tests in all packages (69 celkom)

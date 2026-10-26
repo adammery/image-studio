@@ -105,10 +105,10 @@ Stable, MVP feature-complete. 69 tests passing across core, MCP server, and exte
 
 ## Development
 
-Requires Node 20 LTS.
+Requires Node 22 LTS.
 
 ```bash
-nvm use            # activate Node 20 from .nvmrc
+nvm use            # activate Node 22 from .nvmrc
 npm install        # installs all workspace packages
 npm test           # runs all package tests (69 expected)
 npm run build      # compiles dist/ for all packages
