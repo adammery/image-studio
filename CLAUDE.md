@@ -6,7 +6,7 @@ Referenčná karta pre prácu na tomto repe. Pri práci na čomkoľvek v `image-
 
 - **Plan 1 HOTOVÝ a v `main`** — `@image-studio/core` + `image-studio-mcp` (5 MCP tools). MCP server live, overený end-to-end.
 - **Plan 2 HOTOVÝ a v `main`** — `@image-studio/extension` VSCode extension: CustomEditorProvider, webview GUI (right panel Crop/Resize/Compress, Compare pill Off/Slider/Preview, zoom/pan, Save & Replace, Before/After info panel), Activity Bar sidebar, keyboard shortcuts, user settings, .vsix packaging.
-- **69 testov zelených** (45 core + 21 mcp-server + 3 extension).
+- **79 testov zelených** (45 core + 21 mcp-server + 13 extension).
 - **Build artefakty .vsix** lokálne, platform-tagged: `image-studio-darwin-arm64.vsix` (7.35 MB) a `image-studio-win32-x64.vsix` (8.31 MB) v `packages/extension/`. Nie sú v git-e (veľké natívne binárky sharp). Build cez `./scripts/package.sh <target>`.
 - **Žiadna aktívna feature branch** — `main` je čistý. Staršie `feat/plan-1-core-mcp` je stále na GitHube (archív).
 
@@ -95,13 +95,13 @@ image-studio/
 | Vrstva | Package | Verzia |
 |---|---|---|
 | Jazyk | TypeScript | 5.x |
-| Image | `sharp` | ~0.33.x |
+| Image | `sharp` | ~0.35.x |
 | VSCode | `@types/vscode` | 1.90+ |
 | MCP | `@modelcontextprotocol/sdk` | 1.x |
 | Testy | `vitest` | 1.x / 3.x |
 | Glob | `fast-glob` | 3.x |
 | Bundler (extension) | `esbuild` | 0.21 |
-| Trash | `trash` | 8.x |
+| Trash | `trash` | 10.x |
 | Packaging | `@vscode/vsce` | 2.x |
 
 ## Out-of-MVP (odložené — samostatné plány ak sa vrátime)
@@ -131,7 +131,7 @@ Vynucované v `packages/mcp-server/src/validation.ts`:
 nvm use                          # Node 22 (from .nvmrc)
 npm install                      # installs all workspace packages
 npm run dev                      # watch mode (core + mcp-server — extension má vlastný)
-npm test                         # run tests in all packages (69 celkom)
+npm test                         # run tests in all packages (79 celkom)
 npm run build                    # compile dist/ for all packages
 ```
 
@@ -177,7 +177,7 @@ code --install-extension packages/extension/image-studio-darwin-arm64.vsix
 
 - **`core/` (45 testov)** — plné unit coverage cez vitest, fixtures generované programmatically v `beforeAll()`
 - **`mcp-server/` (21 testov)** — integration: volaj dispatchTool priamo, verify output + structured errors
-- **`extension/` (3 testy)** — len previewEncoder (debounce + dispose). Ostatné cez `test/MANUAL.md` checklist + user-klik
+- **`extension/` (13 testov)** — previewEncoder (debounce + dispose), batchEstimator, conflictDetection. Ostatné cez `test/MANUAL.md` checklist + user-klik
 - **Manual test checklist:** `packages/extension/test/MANUAL.md`
 
 ## Session notes pre Claude Code
@@ -216,7 +216,7 @@ Ak otvoríš Claude Code v tomto repe, štartovací briefing:
 
 1. **Prečítaj tento CLAUDE.md celý** — pochopíš scope, architektúru, stav.
 2. **`git log --oneline -10`** — posledné zmeny.
-3. **`npm test`** — 69/69 zelených potvrdí zdravý baseline.
+3. **`npm test`** — 79/79 zelených potvrdí zdravý baseline.
 4. **Aktuálny stav:** Plan 1 + Plan 2 v main. Žiadna aktívna feature branch. Extension je funkčná a zabalená.
 5. **Ak user chce nové features** → vytvoriť nový feat branch (`git checkout -b feat/...` alebo worktree). Pre väčšie zmeny začať so `superpowers:brainstorming`.
 6. **Scope discipline** — memory uložená: žiadny scope creep do Figma / fork / Laravel / rotate / flip / GIF bez explicitného pokynu.
