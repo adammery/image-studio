@@ -3,6 +3,7 @@
 src/**
 test/**
 node_modules/@types/**
+node_modules/@img/sharp-wasm32/**
 node_modules/**/*.ts
 node_modules/**/*.md
 node_modules/**/LICENSE*
