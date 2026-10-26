@@ -1,7 +1,7 @@
 {
   "name": "image-studio-mcp",
   "version": "0.1.1",
-  "description": "MCP server exposing Image Studio operations (crop, resize, convert, batch) to AI clients via sharp",
+  "description": "MCP server exposing Image Studio operations (crop, resize, convert, batch, inspect) to AI clients via sharp — for image conversion and checking frontend screenshots",
   "license": "MIT",
   "repository": {
     "type": "git",

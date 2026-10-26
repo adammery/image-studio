@@ -1,8 +1,13 @@
 # image-studio-mcp
 
-MCP server that exposes image operations (crop, resize, format conversion, batch) to AI clients via [sharp](https://sharp.pixelplumbing.com/). Works with any MCP-compatible client: Claude Code, Cursor, Claude Desktop.
+MCP server that exposes image operations (crop, resize, format conversion, batch, metadata) to AI clients via [sharp](https://sharp.pixelplumbing.com/). Works with any MCP-compatible client: Claude Code, Cursor, Claude Desktop.
 
-Part of [Image Studio](https://github.com/adammery/image-studio) — a VSCode image editor with AI-driven conversion. This package is the standalone AI side; the VSCode extension is separate.
+Two jobs:
+
+- **Image conversion** — convert, resize, crop, and batch-process images on your disk from a natural-language prompt.
+- **Visual checks while coding** — when the assistant builds a frontend, it screenshots the page with its browser or screenshot tool, then uses these tools to crop into details, scale down full-page shots, and verify dimensions. (The server doesn't capture screenshots itself.)
+
+Part of [Image Studio](https://github.com/adammery/image-studio) — an image editor for you and your AI assistant. This package is the standalone AI side; the VSCode extension is separate.
 
 ## Install
 
@@ -78,6 +83,7 @@ Multi-file conversion. Either `files` (array of absolute paths) or `pattern` (gl
 - "What's the size of `/Users/me/photo.jpg`?"
 - "Resize `/Users/me/banner.png` to width 1200 keeping aspect ratio."
 - "Crop the top-left 500x500 pixels out of `/Users/me/screenshot.png`."
+- "Take a screenshot of the landing page, crop the hero section, and check whether the CTA button is aligned."
 
 ## Security constraints
 

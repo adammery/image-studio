@@ -1,6 +1,6 @@
 # Image Studio
 
-An image editor + **AI converter** for VSCode. Crop, resize, and compress PNG, JPG, WebP, or AVIF with **live Before/After preview** and a **bulk converter** — or let an AI assistant (Claude Code, Cursor, Claude Desktop) do the conversions for you over MCP.
+An image editor for **you and your AI assistant**. Crop, resize, and compress PNG, JPG, WebP, or AVIF with **live Before/After preview** and a **bulk converter** — or let an AI assistant (Claude Code, Cursor, Claude Desktop) do the conversions for you over MCP, and inspect screenshots of the pages it builds.
 
 ![Image Studio editor](https://raw.githubusercontent.com/adammery/image-studio/main/packages/extension/media/demos/editor.gif)
 
@@ -10,6 +10,7 @@ An image editor + **AI converter** for VSCode. Crop, resize, and compress PNG, J
 
 - **GUI** — click an image in the Explorer, edit in the custom editor, save. See *What it does* below.
 - **AI / MCP** — tell Claude *"convert all PNGs in /icons to webp quality 80"* and the bundled [`image-studio-mcp`](#ai-counterpart--image-studio-mcp) server runs the job on your disk. Same `sharp` engine, same local-only privacy.
+- **AI visual checks** — while coding a frontend, the assistant screenshots the page with its browser tool, then uses Image Studio to crop into details, scale down full-page shots, and verify dimensions before deciding what to fix.
 
 ## What it does
 

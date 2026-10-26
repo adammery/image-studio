@@ -4,7 +4,7 @@
   "publisher": "adammery",
   "version": "0.4.0",
   "private": true,
-  "description": "Image editor + AI converter for VSCode — crop, resize, compress PNG · JPG · WebP · AVIF with live preview, bulk converter, and MCP server for Claude Code, Cursor, and Claude Desktop.",
+  "description": "Image editor for you and your AI assistant — crop, resize, compress PNG · JPG · WebP · AVIF with live preview and a bulk converter, plus an MCP server that lets Claude Code, Cursor, and Claude Desktop convert images and inspect frontend screenshots.",
   "icon": "media/icon.png",
   "license": "MIT",
   "repository": { "type": "git", "url": "https://github.com/adammery/image-studio" },

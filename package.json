@@ -2,7 +2,7 @@
   "name": "image-studio",
   "version": "0.1.0",
   "private": true,
-  "description": "Image editor and AI converter for VSCode",
+  "description": "Image editor for you and your AI assistant: VSCode extension + MCP server",
   "license": "MIT",
   "workspaces": [
     "packages/*"

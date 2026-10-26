@@ -1,9 +1,9 @@
 # Image Studio
 
-Image editor + AI converter for VSCode. **Two ways to use one tool**, install whichever (or both):
+Image editor for **you and your AI assistant**. **Two ways to use one tool**, install whichever (or both):
 
-- **AI (MCP server)** — Claude Code / Cursor / Claude Desktop converts images on your disk via natural language: *"convert all PNGs in /icons to webp quality 80"*.
-- **GUI (VSCode extension)** — custom image editor tab with live Before/After preview, crop, resize, compress.
+- **GUI (VSCode extension)** — for you: custom image editor tab with live Before/After preview, crop, resize, compress.
+- **AI (MCP server)** — for your assistant: Claude Code / Cursor / Claude Desktop works with images on your disk via natural language — *"convert all PNGs in /icons to webp quality 80"* — and uses the same tools to inspect frontend screenshots while it codes (see [AI visual checks](#ai-visual-checks-for-frontend-work)).
 
 Both run locally through [sharp](https://sharp.pixelplumbing.com/). No uploads, no cloud, no telemetry.
 
@@ -35,6 +35,14 @@ claude mcp list
 - *"What's the size of /Users/me/photo.jpg?"*
 - *"Resize /Users/me/banner.png to width 1200 keeping aspect ratio."*
 - *"Crop the top-left 500×500 out of /Users/me/screenshot.png."*
+
+### AI visual checks for frontend work
+
+When an AI assistant builds or tweaks a UI, it can check its own work visually. It takes a screenshot of the page with its browser or screenshot tool (Image Studio doesn't capture screens itself), then uses Image Studio on that file:
+
+- **`get_image_info`** — confirm the screenshot's real dimensions (e.g. the viewport actually rendered at 375 px wide).
+- **`crop_image`** — zoom into one area (header, button, form) to look at spacing, alignment, and details up close.
+- **`resize_image`** — scale a tall full-page screenshot down so it fits the model's image limits.
 
 Five tools exposed:
 
