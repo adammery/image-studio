@@ -1,4 +1,4 @@
-import sharp from 'sharp';
+import sharp, { type Metadata } from 'sharp';
 import { existsSync, statSync, writeFileSync } from 'node:fs';
 import { CoreError, type CropRect, type OperationResult } from './types.js';
 
@@ -25,7 +25,7 @@ export async function cropImage(opts: CropRect): Promise<OperationResult> {
     );
   }
 
-  let meta: sharp.Metadata;
+  let meta: Metadata;
   try {
     meta = await sharp(src).metadata();
   } catch (err) {

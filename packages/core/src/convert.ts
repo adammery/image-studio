@@ -1,4 +1,4 @@
-import sharp from 'sharp';
+import sharp, { type Sharp } from 'sharp';
 import { existsSync, statSync, writeFileSync } from 'node:fs';
 import { CoreError, type ConvertOptions, type ImageFormat, type OperationResult } from './types.js';
 import { deriveDst } from './_paths.js';
@@ -19,7 +19,7 @@ export async function convertImage(opts: ConvertOptions): Promise<OperationResul
     );
   }
 
-  let pipeline: sharp.Sharp;
+  let pipeline: Sharp;
   try {
     pipeline = sharp(src);
     await pipeline.metadata(); // validate it's a readable image
@@ -61,11 +61,11 @@ export async function convertImage(opts: ConvertOptions): Promise<OperationResul
 }
 
 function applyFormat(
-  pipeline: sharp.Sharp,
+  pipeline: Sharp,
   format: ImageFormat,
   quality?: number,
   lossless?: boolean
-): sharp.Sharp {
+): Sharp {
   switch (format) {
     case 'png':
       return pipeline.png({ compressionLevel: 9 });

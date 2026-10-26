@@ -1,4 +1,4 @@
-import sharp from 'sharp';
+import sharp, { type Metadata } from 'sharp';
 import { statSync } from 'node:fs';
 import { CoreError, type ImageInfo } from './types.js';
 
@@ -17,7 +17,7 @@ export async function getImageInfo(src: string): Promise<ImageInfo> {
     throw new CoreError('SharpError', `Cannot stat file: ${src}`, e.message);
   }
 
-  let meta: sharp.Metadata;
+  let meta: Metadata;
   try {
     meta = await sharp(src).metadata();
   } catch (err) {
