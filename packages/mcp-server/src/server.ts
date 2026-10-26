@@ -8,7 +8,7 @@ import { TOOL_DEFINITIONS, dispatchTool } from './tools.js';
 
 export async function runServer(): Promise<void> {
   const server = new Server(
-    { name: 'image-studio-mcp', version: '0.1.0' },
+    { name: 'image-studio-mcp', version: '0.2.0' },
     { capabilities: { tools: {} } }
   );
 
